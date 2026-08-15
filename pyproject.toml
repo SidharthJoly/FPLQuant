@@ -1,0 +1,59 @@
+[project]
+name = "fplquant"
+version = "0.1.0"
+description = "Fantasy Premier League analytics and squad optimization platform"
+readme = "README.md"
+authors = [
+    { name = "Sidharth Joly", email = "sidharthjoly@mail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.19.1",
+    "pydantic-settings>=2.15.0",
+    "requests>=2.34.2",
+    "sqlalchemy>=2.0.52",
+]
+
+[project.scripts]
+fplquant-ingest = "fplquant.data.ingest:main"
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "black>=26.5.1",
+    "mypy>=2.3.1",
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.3",
+    "types-requests>=2.33.0.20260712",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+mypy_path = "src"
+explicit_package_bases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=fplquant --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src/fplquant"]

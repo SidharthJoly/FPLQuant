@@ -7,8 +7,8 @@ risk-adjusted squad.
 
 ## Status
 
-🚧 Early scaffold. Milestone 1 (data pipeline) is in place; everything else in the
-roadmap below is still to come.
+🚧 Early scaffold. Milestones 1–2 (data pipeline, form analysis) are in place;
+everything else in the roadmap below is still to come.
 
 ## Architecture (current)
 
@@ -38,6 +38,7 @@ src/fplquant/
   config.py        typed settings (pydantic-settings), env-overridable
   models/           SQLAlchemy ORM models + engine/session setup
   data/             FPL API client + ingestion pipeline
+  form/             EWMA-based form scoring (points + underlying stats)
   optimizer/        (planned) ILP squad optimizer
   risk/             (planned) injury risk + volatility scoring
   similarity/        (planned) player similarity / cheaper-alternative finder
@@ -55,7 +56,12 @@ uv sync                       # install dependencies into .venv
 cp .env.example .env          # optional — defaults work out of the box
 uv run alembic upgrade head   # create data/fplquant.db and apply schema
 uv run fplquant-ingest        # pull live data from the FPL API (~1-2 min)
+uv run fplquant-form          # print the form leaderboard (once gameweeks exist)
 ```
+
+Note: the form leaderboard is empty until gameweek data exists — the 2026/27
+season's gameweek history only starts appearing in the FPL API once matches
+have been played.
 
 ## Development
 
@@ -87,7 +93,7 @@ uv run alembic upgrade head
 ## Roadmap
 
 1. ✅ Data pipeline (FPL API → SQLite via SQLAlchemy/Alembic)
-2. ⬜ Form analysis module (EWMA of points + underlying stats)
+2. ✅ Form analysis module (EWMA of points + underlying stats)
 3. ⬜ Basic ILP optimizer (budget/position/club constraints, maximize points)
 4. ⬜ Injury risk module
 5. ⬜ "Stock market" layer (price momentum, volatility, correlation)

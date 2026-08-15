@@ -1,19 +1,14 @@
-import unicodedata
 from difflib import SequenceMatcher
 
 from fplquant.data.transfermarkt_client import TransfermarktSearchResult
+from fplquant.utils import normalize_text
 
 NAME_MATCH_THRESHOLD = 0.6
 CLUB_MATCH_BONUS = 0.25
 
 
-def _normalize(text: str) -> str:
-    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
-    return text.lower().strip()
-
-
 def _name_similarity(a: str, b: str) -> float:
-    return SequenceMatcher(None, _normalize(a), _normalize(b)).ratio()
+    return SequenceMatcher(None, normalize_text(a), normalize_text(b)).ratio()
 
 
 def match_player(

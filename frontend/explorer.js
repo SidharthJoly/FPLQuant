@@ -16,11 +16,13 @@ const anyPositionCheckbox = document.getElementById("any-position");
 
 let currentPlayerId = null;
 let searchDebounce = null;
+let latestSearchQuery = "";
 
 searchInput.addEventListener("input", () => {
   clearTimeout(searchDebounce);
   const query = searchInput.value.trim();
   if (query.length < 2) {
+    latestSearchQuery = "";
     resultsList.hidden = true;
     return;
   }
@@ -37,7 +39,12 @@ cheaperOnlyCheckbox.addEventListener("change", () => currentPlayerId && loadSimi
 anyPositionCheckbox.addEventListener("change", () => currentPlayerId && loadSimilar(currentPlayerId));
 
 async function runSearch(query) {
+  latestSearchQuery = query;
   const players = await api.listPlayers({ search: query });
+  if (query !== latestSearchQuery) {
+    return; // a newer search superseded this one — discard the stale response
+  }
+
   clear(resultsList);
   if (players.length === 0) {
     resultsList.hidden = true;

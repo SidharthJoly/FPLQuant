@@ -12,13 +12,19 @@ def _team(session: Session, fpl_id: int = 1) -> Team:
 
 
 def _player(
-    session: Session, team: Team, fpl_id: int, web_name: str, element_type: int = 4
+    session: Session,
+    team: Team,
+    fpl_id: int,
+    web_name: str,
+    element_type: int = 4,
+    first_name: str | None = None,
+    second_name: str | None = None,
 ) -> Player:
     player = Player(
         fpl_id=fpl_id,
         team_id=team.id,
-        first_name=web_name,
-        second_name=web_name,
+        first_name=first_name if first_name is not None else web_name,
+        second_name=second_name if second_name is not None else web_name,
         web_name=web_name,
         element_type=element_type,
         now_cost=80,
@@ -66,6 +72,72 @@ def test_list_players_filters_by_search(db_session: Session, api_client: TestCli
 
     body = response.json()
     assert [p["web_name"] for p in body] == ["Saka"]
+
+
+def test_search_matches_first_name_even_when_web_name_differs(
+    db_session: Session, api_client: TestClient
+) -> None:
+    team = _team(db_session)
+    _player(db_session, team, 1, "Bruno G.", first_name="Bruno", second_name="Guimaraes")
+    db_session.commit()
+
+    response = api_client.get("/players", params={"search": "bruno"})
+
+    body = response.json()
+    assert [p["web_name"] for p in body] == ["Bruno G."]
+
+
+def test_search_matches_last_name_even_when_web_name_differs(
+    db_session: Session, api_client: TestClient
+) -> None:
+    team = _team(db_session)
+    _player(db_session, team, 1, "Bruno G.", first_name="Bruno", second_name="Guimaraes")
+    db_session.commit()
+
+    response = api_client.get("/players", params={"search": "guimaraes"})
+
+    body = response.json()
+    assert [p["web_name"] for p in body] == ["Bruno G."]
+
+
+def test_search_is_accent_insensitive(db_session: Session, api_client: TestClient) -> None:
+    team = _team(db_session)
+    _player(db_session, team, 1, "Gyökeres", first_name="Viktor", second_name="Gyökeres")
+    db_session.commit()
+
+    response = api_client.get("/players", params={"search": "gyokeres"})
+
+    body = response.json()
+    assert [p["web_name"] for p in body] == ["Gyökeres"]
+
+
+def test_search_ranks_exact_and_prefix_matches_above_substring_matches(
+    db_session: Session, api_client: TestClient
+) -> None:
+    team = _team(db_session)
+    # "Sam" substring-matches all three; only "Sam" itself is an exact match,
+    # "Samuel" is a prefix match, "Osama" only contains it mid-string.
+    _player(db_session, team, 1, "Osama")
+    _player(db_session, team, 2, "Samuel")
+    _player(db_session, team, 3, "Sam")
+    db_session.commit()
+
+    response = api_client.get("/players", params={"search": "sam"})
+
+    body = response.json()
+    assert [p["web_name"] for p in body] == ["Sam", "Samuel", "Osama"]
+
+
+def test_search_matches_nothing_returns_empty_list(
+    db_session: Session, api_client: TestClient
+) -> None:
+    team = _team(db_session)
+    _player(db_session, team, 1, "Saka")
+    db_session.commit()
+
+    response = api_client.get("/players", params={"search": "zzznomatch"})
+
+    assert response.json() == []
 
 
 def test_get_player_404_when_missing(api_client: TestClient) -> None:

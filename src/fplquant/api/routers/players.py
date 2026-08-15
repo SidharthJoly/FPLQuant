@@ -8,8 +8,36 @@ from fplquant.models.orm import Player, PlayerGameweekStat
 from fplquant.risk.injury import compute_injury_risk_scores
 from fplquant.similarity.finder import find_cheaper_alternatives, find_similar_players
 from fplquant.similarity.vectors import build_player_vectors
+from fplquant.utils import normalize_text
 
 router = APIRouter(prefix="/players", tags=["players"])
+
+# Relevance tiers for player search — lower sorts first. Checked against
+# web_name, first_name, second_name, and the full "first second" name, so a
+# search matches on either first or last name, not just FPL's display name.
+_EXACT = 0
+_PREFIX = 1
+_SUBSTRING = 2
+
+
+def _search_relevance(player: Player, query: str) -> int | None:
+    """Relevance tier for `player` against `query`, or None if it doesn't
+    match at all. web_name is checked first since that's what's actually
+    shown in results and most likely to be what the user typed."""
+    q = normalize_text(query)
+    web = normalize_text(player.web_name)
+    first = normalize_text(player.first_name)
+    second = normalize_text(player.second_name)
+    full = f"{first} {second}"
+
+    if q in (web, second, full):
+        return _EXACT
+    name_parts = (web, second, *full.split())
+    if any(part.startswith(q) for part in name_parts):
+        return _PREFIX
+    if q in web or q in first or q in second:
+        return _SUBSTRING
+    return None
 
 
 def _to_player_out(player: Player) -> schemas.PlayerOut:
@@ -43,9 +71,15 @@ def list_players(
         query = query.filter(Player.team_id == team_id)
     if max_cost is not None:
         query = query.filter(Player.now_cost <= max_cost)
+
+    players = query.all()
     if search:
-        query = query.filter(Player.web_name.ilike(f"%{search}%"))
-    return [_to_player_out(p) for p in query.all()]
+        scored = [(p, _search_relevance(p, search)) for p in players]
+        matches = [(p, score) for p, score in scored if score is not None]
+        matches.sort(key=lambda pair: (pair[1], pair[0].web_name))
+        players = [p for p, _ in matches]
+
+    return [_to_player_out(p) for p in players]
 
 
 @router.get("/{player_id}", response_model=schemas.PlayerDetailOut)

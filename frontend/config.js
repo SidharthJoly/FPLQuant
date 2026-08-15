@@ -15,15 +15,17 @@ export const API_BASE = isLocal ? "" : "https://fplquant.duckdns.org";
 
 // When the API is cross-origin (i.e. deployed), the browser has never
 // talked to that host before the user's first search — DNS + TCP + TLS
-// handshake for a fresh connection measured ~500ms in testing, dwarfing the
-// actual request (~80-100ms once the connection is warm). A preconnect
-// hint does that handshake during page load instead, while it's free, so
-// the first real search doesn't pay for it. `crossorigin` (no value =
-// anonymous mode) matches api.js's fetch calls, which send no credentials.
+// handshake for a fresh connection measured ~500-800ms in testing, dwarfing
+// the actual request (~80-100ms once the connection is warm).
+//
+// A `<link rel=preconnect>` hint was tried here first but measured no
+// improvement in practice (verified — the connection it opens apparently
+// isn't the one fetch() ends up reusing). A real background request
+// through the exact same fetch() path the actual search will use is more
+// reliable: it guarantees the warmed connection is the one that gets
+// reused, since it's literally the same mechanism, not a separate hint the
+// browser is free to handle differently. /health is the cheapest real
+// endpoint to warm it with.
 if (API_BASE) {
-  const link = document.createElement("link");
-  link.rel = "preconnect";
-  link.href = API_BASE;
-  link.crossOrigin = "anonymous";
-  document.head.appendChild(link);
+  fetch(`${API_BASE}/health`).catch(() => {}); // best-effort; a failure here isn't fatal
 }

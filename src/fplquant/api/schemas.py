@@ -47,6 +47,16 @@ class PlayerDetailOut(PlayerOut):
     injury_risk: InjuryRiskOut | None = None
 
 
+class PlayerGameweekStatOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    round: int
+    total_points: int
+    minutes: int
+    value: int
+    selected: int
+
+
 class PriceMomentumOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

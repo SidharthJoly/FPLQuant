@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from fplquant.api.routers import form, market, optimizer, players, risk
+from fplquant.config import REPO_ROOT
 from fplquant.optimizer.types import InfeasibleSquadError
 
 app = FastAPI(
@@ -36,3 +38,11 @@ app.include_router(optimizer.router)
 @app.get("/health", tags=["health"])
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# Mounted last so it only catches paths no API route already claimed — the
+# dashboard is a static, buildless HTML/CSS/JS app (see frontend/) served
+# from the same origin as the API, avoiding CORS entirely for it.
+frontend_dir = REPO_ROOT / "frontend"
+if frontend_dir.is_dir():
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")

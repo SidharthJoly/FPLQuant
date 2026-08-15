@@ -105,6 +105,37 @@ def test_get_player_detail_includes_form_when_history_exists(
     assert body["form_score"]["points_form"] == 5.0
 
 
+def test_get_player_history_404_when_missing(api_client: TestClient) -> None:
+    response = api_client.get("/players/999/history")
+    assert response.status_code == 404
+
+
+def test_get_player_history_returns_gameweek_series(
+    db_session: Session, api_client: TestClient
+) -> None:
+    team = _team(db_session)
+    player = _player(db_session, team, 1, "Player")
+    for round_number, pts in enumerate([2, 6, 10], start=1):
+        db_session.add(
+            PlayerGameweekStat(
+                player_id=player.id,
+                round=round_number,
+                total_points=pts,
+                minutes=90,
+                value=80,
+                selected=1000,
+            )
+        )
+    db_session.commit()
+
+    response = api_client.get(f"/players/{player.id}/history")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [row["round"] for row in body] == [1, 2, 3]
+    assert [row["total_points"] for row in body] == [2, 6, 10]
+
+
 def test_get_similar_players_404_when_missing(api_client: TestClient) -> None:
     response = api_client.get("/players/999/similar")
     assert response.status_code == 404

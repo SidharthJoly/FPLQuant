@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FPL Quant</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header__title">
+      <span class="app-header__mark">FPL</span> Quant
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab active" data-tab="optimizer" role="tab" aria-selected="true">Optimizer</button>
+      <button class="tab" data-tab="explorer" role="tab" aria-selected="false">Player Explorer</button>
+      <button class="tab" data-tab="ticker" role="tab" aria-selected="false">Market Ticker</button>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">◐</button>
+  </header>
+
+  <main class="app-main">
+    <!-- ===================== OPTIMIZER ===================== -->
+    <section class="panel active" id="panel-optimizer" role="tabpanel">
+      <form class="card optimizer-form" id="optimizer-form">
+        <div class="field">
+          <label for="budget">Budget (£m)</label>
+          <input type="number" id="budget" name="budget" value="100.0" step="0.1" min="0.1" />
+        </div>
+        <div class="field">
+          <label for="max-per-club">Max per club</label>
+          <input type="number" id="max-per-club" name="max_per_club" value="3" min="1" step="1" />
+        </div>
+        <div class="field field--checkbox">
+          <label for="risk-adjusted">
+            <input type="checkbox" id="risk-adjusted" name="risk_adjusted" />
+            Risk-adjusted
+          </label>
+        </div>
+        <div class="field risk-params" id="risk-params" hidden>
+          <label for="risk-aversion">Risk aversion</label>
+          <input type="number" id="risk-aversion" name="risk_aversion" value="1.0" step="0.1" min="0" />
+          <label for="injury-weight">Injury weight</label>
+          <input type="number" id="injury-weight" name="injury_weight" value="1.0" step="0.1" min="0" />
+        </div>
+        <button type="submit" class="btn btn--primary">Build squad</button>
+      </form>
+
+      <div id="optimizer-status" class="status" aria-live="polite"></div>
+
+      <div id="optimizer-results" class="optimizer-results" hidden>
+        <div class="kpi-row" id="optimizer-kpis"></div>
+        <div id="optimizer-squad" class="squad-grid"></div>
+      </div>
+    </section>
+
+    <!-- ===================== PLAYER EXPLORER ===================== -->
+    <section class="panel" id="panel-explorer" role="tabpanel">
+      <div class="card explorer-search">
+        <label for="player-search">Search a player</label>
+        <input type="search" id="player-search" placeholder="e.g. Haaland" autocomplete="off" />
+        <ul class="search-results" id="search-results" hidden></ul>
+      </div>
+
+      <div id="explorer-empty" class="empty-state">
+        <p>Search for a player to see their form trend, injury risk, and similar players.</p>
+      </div>
+
+      <div id="explorer-detail" class="explorer-detail" hidden>
+        <div class="card player-header" id="player-header"></div>
+
+        <div class="detail-grid">
+          <div class="card">
+            <h3>Form trend</h3>
+            <div id="form-trend"></div>
+          </div>
+          <div class="card">
+            <h3>Injury risk</h3>
+            <div id="injury-risk"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Similar players</h3>
+          <div class="similar-controls">
+            <label><input type="checkbox" id="cheaper-only" /> Cheaper only</label>
+            <label><input type="checkbox" id="any-position" /> Any position</label>
+          </div>
+          <div id="similar-players"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== MARKET TICKER ===================== -->
+    <section class="panel" id="panel-ticker" role="tabpanel">
+      <div class="card ticker-controls">
+        <label for="ticker-lookback">Lookback (gameweeks)</label>
+        <input type="number" id="ticker-lookback" value="5" min="1" step="1" />
+        <button type="button" class="btn" id="ticker-refresh">Refresh</button>
+      </div>
+      <div id="ticker-empty" class="empty-state" hidden>
+        <p>No gameweek data yet — the ticker populates once the season starts.</p>
+      </div>
+      <div class="ticker-strip" id="ticker-strip"></div>
+    </section>
+  </main>
+
+  <script type="module" src="api.js"></script>
+  <script type="module" src="components.js"></script>
+  <script type="module" src="optimizer.js"></script>
+  <script type="module" src="explorer.js"></script>
+  <script type="module" src="ticker.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

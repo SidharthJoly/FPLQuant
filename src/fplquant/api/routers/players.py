@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, selectinload
 from fplquant.api import schemas
 from fplquant.api.deps import get_session
 from fplquant.form.scoring import compute_form_scores
-from fplquant.models.orm import Player
+from fplquant.models.orm import Player, PlayerGameweekStat
 from fplquant.risk.injury import compute_injury_risk_scores
 from fplquant.similarity.finder import find_cheaper_alternatives, find_similar_players
 from fplquant.similarity.vectors import build_player_vectors
@@ -62,6 +62,25 @@ def get_player(player_id: int, session: Session = Depends(get_session)) -> schem
         form_score=schemas.FormScoreOut.model_validate(form) if form else None,
         injury_risk=schemas.InjuryRiskOut.model_validate(risk) if risk else None,
     )
+
+
+@router.get("/{player_id}/history", response_model=list[schemas.PlayerGameweekStatOut])
+def get_player_history(
+    player_id: int, session: Session = Depends(get_session)
+) -> list[schemas.PlayerGameweekStatOut]:
+    """Per-gameweek points/price/minutes for one player, in round order —
+    the series a form-trend sparkline is drawn from."""
+    player = session.get(Player, player_id)
+    if player is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    stats = (
+        session.query(PlayerGameweekStat)
+        .filter_by(player_id=player_id)
+        .order_by(PlayerGameweekStat.round)
+        .all()
+    )
+    return [schemas.PlayerGameweekStatOut.model_validate(s) for s in stats]
 
 
 @router.get("/{player_id}/similar", response_model=list[schemas.SimilarPlayerOut])

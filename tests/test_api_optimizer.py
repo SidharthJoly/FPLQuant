@@ -45,6 +45,24 @@ def test_optimize_returns_valid_squad(db_session: Session, api_client: TestClien
     assert body["total_cost"] <= 1000
 
 
+def test_optimize_includes_starting_xi(db_session: Session, api_client: TestClient) -> None:
+    _seed_full_pool(db_session)
+
+    response = api_client.post("/optimize", json={"budget": 100.0, "max_per_club": 3})
+
+    body = response.json()
+    xi = body["starting_xi"]
+    assert len(xi["starters"]) == 11
+    assert len(xi["bench"]) == 4
+    assert xi["captain"]["player_id"] in [p["player_id"] for p in xi["starters"]]
+    assert xi["vice_captain"]["player_id"] in [p["player_id"] for p in xi["starters"]]
+    assert xi["captain"]["player_id"] != xi["vice_captain"]["player_id"]
+    d, m, f = (int(part) for part in xi["formation"].split("-"))
+    assert d + m + f == 10
+    assert xi["bench_boost_value"] >= 0
+    assert xi["triple_captain_value"] == xi["captain"]["predicted_points"]
+
+
 def test_optimize_infeasible_returns_400(db_session: Session, api_client: TestClient) -> None:
     _seed_full_pool(db_session)
 

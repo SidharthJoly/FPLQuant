@@ -125,7 +125,19 @@ class OptimizeRequest(BaseModel):
     injury_weight: float = Field(default=1.0, ge=0, description="Only with risk_adjusted=true")
 
 
+class StartingXIOut(BaseModel):
+    formation: str
+    starters: list[SquadPlayerOut]
+    bench: list[SquadPlayerOut]
+    captain: SquadPlayerOut
+    vice_captain: SquadPlayerOut
+    starting_predicted_points: float
+    bench_boost_value: float
+    triple_captain_value: float
+
+
 class OptimizeResponse(BaseModel):
     total_cost: int
     total_predicted_points: float
     squad: list[SquadPlayerOut]
+    starting_xi: StartingXIOut

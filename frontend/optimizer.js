@@ -10,7 +10,9 @@ const riskParams = document.getElementById("risk-params");
 const statusEl = document.getElementById("optimizer-status");
 const resultsEl = document.getElementById("optimizer-results");
 const kpisEl = document.getElementById("optimizer-kpis");
+const chipsEl = document.getElementById("optimizer-chips");
 const squadEl = document.getElementById("optimizer-squad");
+const benchEl = document.getElementById("optimizer-bench");
 
 riskCheckbox.addEventListener("change", () => {
   riskParams.hidden = !riskCheckbox.checked;
@@ -42,26 +44,45 @@ form.addEventListener("submit", async (event) => {
 
 function renderResult(result, riskAdjusted) {
   clear(kpisEl);
+  clear(chipsEl);
   clear(squadEl);
+  clear(benchEl);
 
-  const pointsLabel = riskAdjusted ? "Risk-adjusted points" : "Predicted points";
+  const xi = result.starting_xi;
+  const pointsLabel = riskAdjusted ? "risk-adjusted points" : "predicted points";
+
   kpisEl.appendChild(
     statTile({ label: "Total cost", value: `£${(result.total_cost / 10).toFixed(1)}m` })
   );
   kpisEl.appendChild(
-    statTile({ label: pointsLabel, value: result.total_predicted_points.toFixed(1) })
+    statTile({
+      label: `Starting XI ${pointsLabel}`,
+      value: xi.starting_predicted_points.toFixed(1),
+    })
   );
-  kpisEl.appendChild(statTile({ label: "Squad size", value: `${result.squad.length}` }));
+  kpisEl.appendChild(statTile({ label: "Formation", value: xi.formation }));
+  kpisEl.appendChild(statTile({ label: "Captain", value: xi.captain.web_name }));
 
+  chipsEl.textContent =
+    `Bench Boost would add +${xi.bench_boost_value.toFixed(1)} pts this week · ` +
+    `Triple Captain would add +${xi.triple_captain_value.toFixed(1)} pts (over normal captaincy)`;
+
+  renderPlayerGroup(squadEl, xi.starters, xi);
+  renderPlayerGroup(benchEl, xi.bench, xi);
+
+  resultsEl.hidden = false;
+}
+
+function renderPlayerGroup(container, players, xi) {
   const byPosition = {};
-  for (const player of result.squad) {
+  for (const player of players) {
     (byPosition[player.element_type] ??= []).push(player);
   }
 
   for (const position of POSITION_ORDER) {
-    const players = byPosition[position];
-    if (!players) continue;
-    players.sort((a, b) => b.predicted_points - a.predicted_points);
+    const positionPlayers = byPosition[position];
+    if (!positionPlayers) continue;
+    positionPlayers.sort((a, b) => b.predicted_points - a.predicted_points);
 
     const card = document.createElement("div");
     card.className = "squad-position";
@@ -70,13 +91,18 @@ function renderResult(result, riskAdjusted) {
     heading.textContent = POSITION_NAMES[position];
     card.appendChild(heading);
 
-    for (const player of players) {
+    for (const player of positionPlayers) {
       const row = document.createElement("div");
       row.className = "squad-player";
 
       const name = document.createElement("span");
       name.className = "squad-player__name";
       name.textContent = `${player.web_name} (${player.team_short_name})`;
+      if (player.player_id === xi.captain.player_id) {
+        name.appendChild(badge("C"));
+      } else if (player.player_id === xi.vice_captain.player_id) {
+        name.appendChild(badge("VC"));
+      }
 
       const meta = document.createElement("span");
       meta.className = "squad-player__meta";
@@ -87,8 +113,13 @@ function renderResult(result, riskAdjusted) {
       card.appendChild(row);
     }
 
-    squadEl.appendChild(card);
+    container.appendChild(card);
   }
+}
 
-  resultsEl.hidden = false;
+function badge(text) {
+  const el = document.createElement("span");
+  el.className = "captain-badge";
+  el.textContent = text;
+  return el;
 }

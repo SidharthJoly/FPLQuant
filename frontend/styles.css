@@ -209,6 +209,33 @@ input[type="number"], input[type="search"], input[type="text"] {
 .squad-player__name { color: var(--text-primary); }
 .squad-player__meta { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 
+.captain-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--series-blue);
+  color: #fff;
+  vertical-align: middle;
+}
+
+.chip-values {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.optimizer-results h3 {
+  margin: 20px 0 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.optimizer-results h3:first-of-type { margin-top: 0; }
+
 /* ============ Player explorer ============ */
 .explorer-search { position: relative; }
 .search-results {

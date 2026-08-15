@@ -47,5 +47,20 @@ class OptimizedSquad:
     total_predicted_points: float
 
 
+@dataclass(frozen=True)
+class StartingXI:
+    """The best valid starting XI from a 15-man squad, plus the
+    decision-support numbers that come along with it for free."""
+
+    formation: str  # e.g. "3-4-3" (DEF-MID-FWD; GKP is always 1, omitted)
+    starters: list[PlayerCandidate]
+    bench: list[PlayerCandidate]  # bench GKP first, then outfield subs by predicted_points
+    captain: PlayerCandidate
+    vice_captain: PlayerCandidate
+    starting_predicted_points: float  # sum over starters, captain NOT doubled
+    bench_boost_value: float  # extra points if the bench also counted this week
+    triple_captain_value: float  # extra points from 3x vs normal 2x captaincy
+
+
 class InfeasibleSquadError(RuntimeError):
     """Raised when no squad satisfies the given constraints (e.g. budget too low)."""

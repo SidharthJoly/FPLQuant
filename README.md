@@ -149,6 +149,16 @@ uv run fplquant-optimize --budget 100.0 --max-per-club 3
 uv run fplquant-optimize --risk-adjusted --risk-aversion 1.0 --injury-weight 1.0
 ```
 
+On top of the 15-man squad, both the CLI and `/optimize` also return a
+starting XI: the best of FPL's 8 legal formations for that squad
+(`src/fplquant/optimizer/starting_xi.py` — exhaustive search over the
+formations, since points are additive per position there's no need for
+another ILP), captain + vice-captain (top two starters by predicted
+points), and the point value of using Bench Boost or Triple Captain that
+week. Wildcard/Free Hit aren't covered — those are about *whether to
+replace your current squad*, which needs a "my current team" concept this
+app doesn't track.
+
 Player similarity (per-90 stat vectors, cosine k-NN, PCA/t-SNE projection —
 also needs real gameweek history, so it's empty preseason like the market layer):
 

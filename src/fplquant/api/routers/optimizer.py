@@ -12,6 +12,7 @@ from fplquant.optimizer.candidates import (
     build_risk_adjusted_candidates_from_db,
 )
 from fplquant.optimizer.squad import optimize_squad
+from fplquant.optimizer.starting_xi import select_starting_xi
 from fplquant.optimizer.types import SquadConstraints
 
 router = APIRouter(tags=["optimizer"])
@@ -48,10 +49,21 @@ def optimize(
         candidates = build_candidates_from_db(session)
 
     squad = optimize_squad(candidates, constraints)
+    xi = select_starting_xi(squad.players)
     response = schemas.OptimizeResponse(
         total_cost=squad.total_cost,
         total_predicted_points=squad.total_predicted_points,
         squad=[schemas.SquadPlayerOut.model_validate(p) for p in squad.players],
+        starting_xi=schemas.StartingXIOut(
+            formation=xi.formation,
+            starters=[schemas.SquadPlayerOut.model_validate(p) for p in xi.starters],
+            bench=[schemas.SquadPlayerOut.model_validate(p) for p in xi.bench],
+            captain=schemas.SquadPlayerOut.model_validate(xi.captain),
+            vice_captain=schemas.SquadPlayerOut.model_validate(xi.vice_captain),
+            starting_predicted_points=xi.starting_predicted_points,
+            bench_boost_value=xi.bench_boost_value,
+            triple_captain_value=xi.triple_captain_value,
+        ),
     )
 
     cache_set(cache_key, response.model_dump_json(), settings.optimize_cache_ttl_seconds)

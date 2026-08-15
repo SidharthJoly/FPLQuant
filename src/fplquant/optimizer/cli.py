@@ -6,6 +6,7 @@ from fplquant.optimizer.candidates import (
     build_risk_adjusted_candidates_from_db,
 )
 from fplquant.optimizer.squad import optimize_squad
+from fplquant.optimizer.starting_xi import select_starting_xi
 from fplquant.optimizer.types import POSITION_NAMES, PlayerCandidate, SquadConstraints
 
 
@@ -44,23 +45,41 @@ def main() -> None:
         else:
             candidates = build_candidates_from_db(session)
         squad = optimize_squad(candidates, constraints)
+        xi = select_starting_xi(squad.players)
 
     points_label = "risk-adjusted points" if args.risk_adjusted else "predicted points"
     print(f"Total cost: £{squad.total_cost / 10:.1f}m / £{constraints.budget / 10:.1f}m")
-    print(f"Total {points_label}: {squad.total_predicted_points:.2f}")
+    print(f"Total {points_label} (15-man squad): {squad.total_predicted_points:.2f}")
+    print(f"Starting XI {points_label}: {xi.starting_predicted_points:.2f}")
+    print(f"Formation: {xi.formation}")
+    print(f"Captain: {xi.captain.web_name} (vice: {xi.vice_captain.web_name})")
+    print(f"Bench Boost would add: +{xi.bench_boost_value:.2f} pts")
+    print(f"Triple Captain would add: +{xi.triple_captain_value:.2f} pts")
     print()
 
-    by_position: dict[int, list[PlayerCandidate]] = {}
-    for player in squad.players:
-        by_position.setdefault(player.element_type, []).append(player)
+    def _badge(player: PlayerCandidate) -> str:
+        if player.player_id == xi.captain.player_id:
+            return " (C)"
+        if player.player_id == xi.vice_captain.player_id:
+            return " (VC)"
+        return ""
 
-    for position in sorted(by_position):
-        print(f"{POSITION_NAMES[position]}:")
-        for player in sorted(by_position[position], key=lambda p: -p.predicted_points):
-            print(
-                f"  {player.web_name:<20} {player.team_short_name:<4} "
-                f"£{player.now_cost / 10:>4.1f}m  {player.predicted_points:>6.2f} pts"
-            )
+    def _print_group(players: list[PlayerCandidate]) -> None:
+        by_position: dict[int, list[PlayerCandidate]] = {}
+        for player in players:
+            by_position.setdefault(player.element_type, []).append(player)
+        for position in sorted(by_position):
+            print(f"{POSITION_NAMES[position]}:")
+            for player in sorted(by_position[position], key=lambda p: -p.predicted_points):
+                print(
+                    f"  {player.web_name:<20}{_badge(player):<5} {player.team_short_name:<4} "
+                    f"£{player.now_cost / 10:>4.1f}m  {player.predicted_points:>6.2f} pts"
+                )
+
+    print("STARTING XI")
+    _print_group(xi.starters)
+    print("\nBENCH")
+    _print_group(xi.bench)
 
 
 if __name__ == "__main__":

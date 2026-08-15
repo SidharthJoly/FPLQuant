@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 fplquant-ingest = "fplquant.data.ingest:main"
+fplquant-form = "fplquant.form.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]

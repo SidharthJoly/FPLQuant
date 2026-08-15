@@ -84,14 +84,26 @@ logging a warning) if Redis is unreachable rather than ever failing a request.
 ```
 frontend/ (static, no build step — no Node/npm involved)
   index.html   ── 3 tabs: Optimizer, Player Explorer, Market Ticker
+  config.js    ── API_BASE: same-origin locally, the backend's URL once deployed
   api.js       ── fetch wrapper over the endpoints above
   components.js ── stat tile, sparkline (SVG), risk badge, data table
   optimizer.js / explorer.js / ticker.js / main.js
 ```
 
-Served by FastAPI itself (`StaticFiles` mounted at `/`, after all API
-routes) — same origin as the API, so no CORS is needed for it. Vanilla
-HTML/CSS/JS by design: no bundler, no framework, no `npm install`.
+Two ways to serve it, both supported:
+- **Local / same-origin:** FastAPI mounts `frontend/` itself (`StaticFiles` at
+  `/`, after all API routes) — no CORS needed, `config.js`'s default
+  `API_BASE = ""` just works.
+- **Deployed:** the frontend is published to **GitHub Pages**
+  (`.github/workflows/pages.yml`, triggered on any push touching `frontend/`)
+  while the backend runs separately on the droplet — genuine cross-origin
+  traffic. `config.js`'s `API_BASE` needs to point at the droplet's URL, and
+  `Settings.cors_allowed_origins` (`src/fplquant/config.py`) needs the Pages
+  origin allowed — it already defaults to
+  `https://sidharthjoly.github.io` plus localhost, override via
+  `FPLQUANT_CORS_ALLOWED_ORIGINS` once a custom domain exists.
+
+Vanilla HTML/CSS/JS by design: no bundler, no framework, no `npm install`.
 
 ## Project layout
 
@@ -240,11 +252,19 @@ uv run alembic upgrade head
 
 ## Deployment
 
-Not started. The plan: a DigitalOcean droplet (via the GitHub Student Pack
-credit) running `docker compose up` from this repo, with a free Student Pack
-domain pointed at it. Needs droplet creation and DNS setup done by hand
-first (account access, not something automatable here); a CD workflow and
-reverse-proxy/HTTPS config can follow once that exists.
+Split across two hosts:
+
+- **Frontend** — GitHub Pages, live at deploy time via
+  `.github/workflows/pages.yml`. Needs GitHub Pages enabled on the repo
+  (Settings → Pages → Source: GitHub Actions) and `frontend/config.js`'s
+  `API_BASE` pointed at the backend once it has a real URL.
+- **Backend** (FastAPI + Redis) — not started. The plan: a DigitalOcean
+  droplet (via the GitHub Student Pack credit) running `docker compose up`
+  from this repo (now just `api` + `redis`, since the frontend no longer
+  needs serving from there), with a free Student Pack domain pointed at it.
+  Needs droplet creation and DNS setup done by hand first (account access,
+  not something automatable here); a CD workflow and reverse-proxy/HTTPS
+  config can follow once that exists.
 
 ## License
 

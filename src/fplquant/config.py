@@ -26,5 +26,19 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     optimize_cache_ttl_seconds: int = 3600
 
+    # Comma-separated allowed CORS origins, or "*" for all. The frontend is
+    # deployed separately (GitHub Pages) from the backend (droplet), so this
+    # needs the Pages origin explicitly — same-origin local dev doesn't hit
+    # CORS at all. Add a custom domain here (comma-separated) once it exists.
+    cors_allowed_origins: str = (
+        "https://sidharthjoly.github.io,http://localhost:8000,http://127.0.0.1:8000"
+    )
+
+    @property
+    def cors_allowed_origins_list(self) -> list[str]:
+        if self.cors_allowed_origins.strip() == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
+
 
 settings = Settings()

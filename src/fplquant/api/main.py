@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from fplquant.api.routers import form, market, optimizer, players, risk
-from fplquant.config import REPO_ROOT
+from fplquant.config import REPO_ROOT, settings
 from fplquant.optimizer.types import InfeasibleSquadError
 
 app = FastAPI(
@@ -13,11 +13,12 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Permissive CORS for local development against the (separately-run) frontend.
-# Tighten this before any non-local deployment.
+# The frontend (GitHub Pages) and backend (droplet) are deployed separately,
+# so this is real cross-origin traffic, not just a local-dev convenience.
+# See Settings.cors_allowed_origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_allowed_origins_list,
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -7,9 +7,9 @@ risk-adjusted squad.
 
 ## Status
 
-🚧 Early scaffold. Milestones 1–4 (data pipeline, form analysis, basic ILP
-optimizer, injury risk) are in place; everything else in the roadmap below is
-still to come.
+🚧 Early scaffold. Milestones 1–5 (data pipeline, form analysis, basic ILP
+optimizer, injury risk, stock-market layer) are in place; everything else in
+the roadmap below is still to come.
 
 ## Architecture (current)
 
@@ -58,6 +58,7 @@ src/fplquant/
   form/             EWMA-based form scoring (points + underlying stats)
   optimizer/        ILP squad selection (PuLP), budget/position/club constraints
   risk/             injury risk scoring (age, position, history, minutes load)
+  market/           price/ownership momentum, points volatility, teammate correlation
   similarity/        (planned) player similarity / cheaper-alternative finder
   api/              (planned) FastAPI backend
 alembic/            database migrations
@@ -93,7 +94,14 @@ is rate-limited — see Data sources below):
 ```bash
 uv run fplquant-ingest-injuries   # resolve player matches + sync injury history
 uv run fplquant-risk              # print the injury risk leaderboard
+uv run fplquant-market            # price/ownership momentum, volatility, correlation
 ```
+
+Like the form leaderboard, `fplquant-market` is empty until gameweek data
+exists — price momentum, points volatility, and teammate correlation are all
+computed from the per-gameweek time series (`PlayerGameweekStat`), and there's
+no meaningful preseason fallback for any of them (unlike the optimizer's
+`ep_next` fallback). They populate automatically once gameweek 1 happens.
 
 ## Development
 
@@ -136,7 +144,7 @@ uv run alembic upgrade head
 2. ✅ Form analysis module (EWMA of points + underlying stats)
 3. ✅ Basic ILP optimizer (budget/position/club constraints, maximize points)
 4. ✅ Injury risk module (age, position, Transfermarkt injury history, minutes load)
-5. ⬜ "Stock market" layer (price momentum, volatility, correlation)
+5. ✅ "Stock market" layer (price momentum, volatility, correlation)
 6. ⬜ Risk-adjusted optimizer (Sharpe-style combined metric)
 7. ⬜ Player similarity finder (cosine similarity / k-NN, PCA/t-SNE viz)
 8. ⬜ FastAPI backend with Redis caching

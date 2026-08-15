@@ -7,9 +7,9 @@ risk-adjusted squad.
 
 ## Status
 
-🚧 Early scaffold. Milestones 1–5 (data pipeline, form analysis, basic ILP
-optimizer, injury risk, stock-market layer) are in place; everything else in
-the roadmap below is still to come.
+🚧 Early scaffold. Milestones 1–6 (data pipeline, form analysis, basic ILP
+optimizer, injury risk, stock-market layer, risk-adjusted optimizer) are in
+place; everything else in the roadmap below is still to come.
 
 ## Architecture (current)
 
@@ -57,7 +57,7 @@ src/fplquant/
   data/             FPL API client + ingestion pipeline
   form/             EWMA-based form scoring (points + underlying stats)
   optimizer/        ILP squad selection (PuLP), budget/position/club constraints
-  risk/             injury risk scoring (age, position, history, minutes load)
+  risk/             injury risk scoring + risk-adjusted expected points (Sharpe-style)
   market/           price/ownership momentum, points volatility, teammate correlation
   similarity/        (planned) player similarity / cheaper-alternative finder
   api/              (planned) FastAPI backend
@@ -86,6 +86,10 @@ our own EWMA-based points_form once it's available.
 
 ```bash
 uv run fplquant-optimize --budget 100.0 --max-per-club 3
+
+# Risk-adjusted: maximizes expected_points * (1 - injury_risk) / (1 + volatility
+# penalty) instead of raw expected points — see src/fplquant/risk/adjusted.py
+uv run fplquant-optimize --risk-adjusted --risk-aversion 1.0 --injury-weight 1.0
 ```
 
 Injury risk (separate from the main ingest, since it scrapes Transfermarkt and
@@ -145,7 +149,7 @@ uv run alembic upgrade head
 3. ✅ Basic ILP optimizer (budget/position/club constraints, maximize points)
 4. ✅ Injury risk module (age, position, Transfermarkt injury history, minutes load)
 5. ✅ "Stock market" layer (price momentum, volatility, correlation)
-6. ⬜ Risk-adjusted optimizer (Sharpe-style combined metric)
+6. ✅ Risk-adjusted optimizer (Sharpe-style combined metric)
 7. ⬜ Player similarity finder (cosine similarity / k-NN, PCA/t-SNE viz)
 8. ⬜ FastAPI backend with Redis caching
 9. ⬜ Frontend dashboard

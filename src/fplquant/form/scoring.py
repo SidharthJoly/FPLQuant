@@ -74,3 +74,21 @@ def compute_form_scores(
         for i, player in enumerate(eligible)
     ]
     return sorted(scores, key=lambda s: s.combined_score, reverse=True)
+
+
+def predicted_points_by_player(session: Session, halflife: float = 3.0) -> dict[int, float]:
+    """Our best current expected-points estimate per player.
+
+    Our own EWMA points_form when gameweek history exists, otherwise FPL's
+    own `ep_next` estimate — this keeps downstream consumers (the optimizer,
+    the risk-adjusted scorer) usable before any gameweek history has
+    accumulated (e.g. preseason), while preferring our own signal once it's
+    available.
+    """
+    points_form_by_player = {
+        score.player_id: score.points_form for score in compute_form_scores(session, halflife)
+    }
+    return {
+        player.id: points_form_by_player.get(player.id, player.ep_next)
+        for player in session.query(Player).all()
+    }

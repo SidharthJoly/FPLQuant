@@ -1,0 +1,25 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      FPLQUANT_REDIS_URL: redis://redis:6379/0
+      FPLQUANT_DATABASE_URL: sqlite:////app/data/fplquant.db
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - redis
+    command: >
+      sh -c "uv run alembic upgrade head &&
+             uv run uvicorn fplquant.api.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  redis_data:

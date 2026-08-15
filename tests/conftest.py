@@ -1,6 +1,8 @@
 from collections.abc import Iterator
 
+import fakeredis
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
 from fplquant.models.base import Base, make_engine
@@ -16,3 +18,21 @@ def db_session() -> Iterator[Session]:
         yield session
     finally:
         session.close()
+
+
+@pytest.fixture
+def api_client(db_session: Session) -> Iterator[TestClient]:
+    """A TestClient wired to `db_session` (so tests seed data via the ORM
+    directly) and an in-memory fake Redis (so caching is exercised without a
+    real Redis server)."""
+    from fplquant.api import cache as cache_module
+    from fplquant.api.deps import get_session
+    from fplquant.api.main import app
+
+    app.dependency_overrides[get_session] = lambda: db_session
+    cache_module.set_client(fakeredis.FakeRedis(decode_responses=True))
+
+    with TestClient(app) as client:
+        yield client
+
+    app.dependency_overrides.clear()

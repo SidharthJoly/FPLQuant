@@ -10,13 +10,16 @@ requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.19.1",
     "beautifulsoup4>=4.15.0",
+    "fastapi>=0.141.1",
     "lxml>=6.1.1",
     "numpy>=2.5.2",
     "pulp>=3.3.2",
     "pydantic-settings>=2.15.0",
+    "redis>=8.1.0",
     "requests>=2.34.2",
     "scikit-learn>=1.9.0",
     "sqlalchemy>=2.0.52",
+    "uvicorn[standard]>=0.52.3",
 ]
 
 [project.scripts]
@@ -28,6 +31,7 @@ fplquant-risk = "fplquant.risk.cli:main"
 fplquant-market = "fplquant.market.cli:main"
 fplquant-similar = "fplquant.similarity.cli:main"
 fplquant-projection = "fplquant.similarity.projection_cli:main"
+fplquant-api = "fplquant.api.run:main"
 
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]
@@ -36,6 +40,8 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "black>=26.5.1",
+    "fakeredis>=2.37.0",
+    "httpx>=0.28.1",
     "mypy>=2.3.1",
     "pre-commit>=4.6.2",
     "pytest>=9.1.1",
@@ -57,6 +63,12 @@ extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+
+[tool.ruff.lint.per-file-ignores]
+# FastAPI's dependency injection requires calling Depends() in argument
+# defaults — this is the framework's intended idiom, not the footgun B008
+# warns about elsewhere.
+"src/fplquant/api/routers/*.py" = ["B008"]
 
 [tool.mypy]
 python_version = "3.13"

@@ -23,5 +23,8 @@ class Settings(BaseSettings):
     )
     transfermarkt_request_delay_seconds: float = 1.5
 
+    redis_url: str = "redis://localhost:6379/0"
+    optimize_cache_ttl_seconds: int = 3600
+
 
 settings = Settings()

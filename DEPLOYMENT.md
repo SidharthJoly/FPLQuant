@@ -177,22 +177,42 @@ TTY allocation, needed since cron has no terminal). Set up on the VM:
 
 ```bash
 cd ~/FPLQuant && git pull   # pick up the scripts if they weren't there at clone time
-crontab -e
 ```
 
-Add these two lines (matching the CI workflows' own cadence — daily FPL
-data, weekly injury scrape since that's rate-limited scraping over the full
-player pool):
+The minimized Ubuntu image doesn't ship `cron` (same story as `nano`
+earlier — install it first):
 
-```cron
+```bash
+sudo apt update && sudo apt install -y cron
+sudo systemctl enable --now cron
+```
+
+`crontab -e` needs an interactive editor, which this image also lacks by
+default — set the crontab non-interactively instead:
+
+```bash
+crontab -l 2>/dev/null > /tmp/mycron || true
+cat >> /tmp/mycron <<'EOF'
 0 3 * * *   /home/ubuntu/FPLQuant/scripts/cron_ingest.sh >> /home/ubuntu/ingest.log 2>&1
 0 4 * * 0   /home/ubuntu/FPLQuant/scripts/cron_ingest_injuries.sh >> /home/ubuntu/ingest_injuries.log 2>&1
+EOF
+crontab /tmp/mycron
+crontab -l   # confirm both lines are there
 ```
 
-(Adjust the path if the repo isn't cloned to `/home/ubuntu/FPLQuant`.) Check
-`crontab -l` to confirm they're saved, and `tail -f ~/ingest.log` after the
-next scheduled run (or trigger one manually — `~/FPLQuant/scripts/cron_ingest.sh`
-— to test immediately rather than waiting).
+(Adjust the path if the repo isn't cloned to `/home/ubuntu/FPLQuant`. The
+times match the CI ingest workflows' own cadence — daily FPL data, weekly
+injury scrape since that's rate-limited scraping over the full player pool.)
+
+Verify before waiting for the schedule — run a script directly and check
+its exit code:
+
+```bash
+~/FPLQuant/scripts/cron_ingest.sh; echo "exit code: $?"
+```
+
+Confirmed working in production: `systemctl is-active cron` → `active`,
+manual run → fetched all 587 players, exit code `0`.
 
 ## Oracle Always Free: the idle-reclaim gotcha
 

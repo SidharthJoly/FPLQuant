@@ -254,17 +254,16 @@ uv run alembic upgrade head
 
 Split across two hosts:
 
-- **Frontend** — GitHub Pages, live at deploy time via
-  `.github/workflows/pages.yml`. Needs GitHub Pages enabled on the repo
-  (Settings → Pages → Source: GitHub Actions) and `frontend/config.js`'s
-  `API_BASE` pointed at the backend once it has a real URL.
-- **Backend** (FastAPI + Redis) — not started. The plan: a DigitalOcean
-  droplet (via the GitHub Student Pack credit) running `docker compose up`
-  from this repo (now just `api` + `redis`, since the frontend no longer
-  needs serving from there), with a free Student Pack domain pointed at it.
-  Needs droplet creation and DNS setup done by hand first (account access,
-  not something automatable here); a CD workflow and reverse-proxy/HTTPS
-  config can follow once that exists.
+- **Frontend** — [GitHub Pages](https://sidharthjoly.github.io/FPLQuant/),
+  live via `.github/workflows/pages.yml` (deploys on every push touching
+  `frontend/`). ✅ Done.
+- **Backend** (FastAPI + Redis) — not started. DigitalOcean's GitHub Student
+  Pack offer expired (July 31, 2026) before it got redeemed, so the plan
+  moved to Oracle Cloud's "Always Free" tier instead — see
+  [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full runbook (VM setup, first
+  deploy, HTTPS/custom domain, and the manually-triggered CD workflow,
+  `.github/workflows/deploy.yml`). Needs the VM created by hand first
+  (account access, not something automatable here).
 
 ## License
 

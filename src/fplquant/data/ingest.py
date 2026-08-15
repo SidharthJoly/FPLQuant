@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from fplquant.data.fpl_client import FPLClient
 from fplquant.models.base import session_scope
 from fplquant.models.orm import Fixture, Player, PlayerGameweekStat, Team
+from fplquant.utils import as_float
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +17,6 @@ def _parse_kickoff(value: str | None) -> dt.datetime | None:
     if value is None:
         return None
     return dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
-
-
-def _as_float(value: Any) -> float:
-    return float(value) if value not in (None, "") else 0.0
 
 
 def upsert_teams(session: Session, teams_payload: list[dict[str, Any]]) -> dict[int, Team]:
@@ -58,8 +55,9 @@ def upsert_players(
         player.web_name = raw["web_name"]
         player.element_type = raw["element_type"]
         player.now_cost = raw["now_cost"]
-        player.selected_by_percent = _as_float(raw["selected_by_percent"])
-        player.form = _as_float(raw["form"])
+        player.selected_by_percent = as_float(raw["selected_by_percent"])
+        player.form = as_float(raw["form"])
+        player.ep_next = as_float(raw.get("ep_next"))
         player.total_points = raw["total_points"]
         player.status = raw["status"]
         player.chance_of_playing_next_round = raw["chance_of_playing_next_round"]
@@ -115,14 +113,14 @@ def upsert_player_gameweek_stats(
         stat.goals_conceded = raw["goals_conceded"]
         stat.bonus = raw["bonus"]
         stat.bps = raw["bps"]
-        stat.influence = _as_float(raw["influence"])
-        stat.creativity = _as_float(raw["creativity"])
-        stat.threat = _as_float(raw["threat"])
-        stat.ict_index = _as_float(raw["ict_index"])
-        stat.expected_goals = _as_float(raw.get("expected_goals"))
-        stat.expected_assists = _as_float(raw.get("expected_assists"))
-        stat.expected_goal_involvements = _as_float(raw.get("expected_goal_involvements"))
-        stat.expected_goals_conceded = _as_float(raw.get("expected_goals_conceded"))
+        stat.influence = as_float(raw["influence"])
+        stat.creativity = as_float(raw["creativity"])
+        stat.threat = as_float(raw["threat"])
+        stat.ict_index = as_float(raw["ict_index"])
+        stat.expected_goals = as_float(raw.get("expected_goals"))
+        stat.expected_assists = as_float(raw.get("expected_assists"))
+        stat.expected_goal_involvements = as_float(raw.get("expected_goal_involvements"))
+        stat.expected_goals_conceded = as_float(raw.get("expected_goals_conceded"))
         stat.value = raw["value"]
         stat.selected = raw["selected"]
         stat.transfers_in = raw["transfers_in"]

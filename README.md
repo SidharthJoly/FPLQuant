@@ -7,8 +7,8 @@ risk-adjusted squad.
 
 ## Status
 
-🚧 Early scaffold. Milestones 1–2 (data pipeline, form analysis) are in place;
-everything else in the roadmap below is still to come.
+🚧 Early scaffold. Milestones 1–3 (data pipeline, form analysis, basic ILP
+optimizer) are in place; everything else in the roadmap below is still to come.
 
 ## Architecture (current)
 
@@ -39,7 +39,7 @@ src/fplquant/
   models/           SQLAlchemy ORM models + engine/session setup
   data/             FPL API client + ingestion pipeline
   form/             EWMA-based form scoring (points + underlying stats)
-  optimizer/        (planned) ILP squad optimizer
+  optimizer/        ILP squad selection (PuLP), budget/position/club constraints
   risk/             (planned) injury risk + volatility scoring
   similarity/        (planned) player similarity / cheaper-alternative finder
   api/              (planned) FastAPI backend
@@ -56,12 +56,19 @@ uv sync                       # install dependencies into .venv
 cp .env.example .env          # optional — defaults work out of the box
 uv run alembic upgrade head   # create data/fplquant.db and apply schema
 uv run fplquant-ingest        # pull live data from the FPL API (~1-2 min)
-uv run fplquant-form          # print the form leaderboard (once gameweeks exist)
+uv run fplquant-form           # print the form leaderboard (once gameweeks exist)
+uv run fplquant-optimize       # select an optimal 15-man squad within budget
 ```
 
 Note: the form leaderboard is empty until gameweek data exists — the 2026/27
 season's gameweek history only starts appearing in the FPL API once matches
-have been played.
+have been played. The optimizer works either way: it falls back to FPL's own
+`ep_next` estimate for players with no gameweek history yet, and switches to
+our own EWMA-based points_form once it's available.
+
+```bash
+uv run fplquant-optimize --budget 100.0 --max-per-club 3
+```
 
 ## Development
 
@@ -94,7 +101,7 @@ uv run alembic upgrade head
 
 1. ✅ Data pipeline (FPL API → SQLite via SQLAlchemy/Alembic)
 2. ✅ Form analysis module (EWMA of points + underlying stats)
-3. ⬜ Basic ILP optimizer (budget/position/club constraints, maximize points)
+3. ✅ Basic ILP optimizer (budget/position/club constraints, maximize points)
 4. ⬜ Injury risk module
 5. ⬜ "Stock market" layer (price momentum, volatility, correlation)
 6. ⬜ Risk-adjusted optimizer (Sharpe-style combined metric)

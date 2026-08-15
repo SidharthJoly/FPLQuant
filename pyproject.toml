@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.19.1",
+    "pulp>=3.3.2",
     "pydantic-settings>=2.15.0",
     "requests>=2.34.2",
     "sqlalchemy>=2.0.52",
@@ -17,6 +18,7 @@ dependencies = [
 [project.scripts]
 fplquant-ingest = "fplquant.data.ingest:main"
 fplquant-form = "fplquant.form.cli:main"
+fplquant-optimize = "fplquant.optimizer.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]
@@ -52,9 +54,16 @@ strict = true
 mypy_path = "src"
 explicit_package_bases = true
 
+[[tool.mypy.overrides]]
+module = "pulp.*"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=fplquant --cov-report=term-missing"
+filterwarnings = [
+    "ignore::DeprecationWarning:pulp",
+]
 
 [tool.coverage.run]
 source = ["src/fplquant"]

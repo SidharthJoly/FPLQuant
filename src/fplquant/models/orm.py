@@ -36,6 +36,7 @@ class Player(Base):
     now_cost: Mapped[int] = mapped_column(Integer)  # tenths of a million, e.g. 105 = £10.5m
     selected_by_percent: Mapped[float] = mapped_column(Float, default=0.0)
     form: Mapped[float] = mapped_column(Float, default=0.0)
+    ep_next: Mapped[float] = mapped_column(Float, default=0.0)  # FPL's own next-GW points estimate
     total_points: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(8), default="a")  # a/d/i/s/u
     chance_of_playing_next_round: Mapped[int | None] = mapped_column(Integer, nullable=True)

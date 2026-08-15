@@ -1,5 +1,8 @@
 # FPL Quant
 
+[![CI](https://github.com/SidharthJoly/FPLQuant/actions/workflows/ci.yml/badge.svg)](https://github.com/SidharthJoly/FPLQuant/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/SidharthJoly/FPLQuant/main/badges/coverage.json)](https://github.com/SidharthJoly/FPLQuant/actions/workflows/ci.yml)
+
 A Fantasy Premier League analytics and squad optimization platform. Treats players
 like financial instruments — combining price momentum, volatility, and portfolio
 theory with real sports analytics (injury risk, form) to select an optimal,
@@ -12,6 +15,18 @@ pipeline, form analysis, ILP optimizer (raw and risk-adjusted), injury risk,
 stock-market layer, player similarity finder, FastAPI backend, and a
 frontend dashboard. Deployment (DigitalOcean droplet + custom domain) is
 next, and isn't started yet.
+
+## Screenshots
+
+Squad optimizer, player explorer, and the market ticker (light + dark).
+**Demo data** — the 2026/27 season hasn't started yet, so these are
+seeded with synthetic gameweek history on top of real FPL player/team data,
+not live results.
+
+<img src="docs/screenshots/optimizer.png" alt="Squad optimizer" width="720" />
+<img src="docs/screenshots/explorer.png" alt="Player explorer" width="720" />
+<img src="docs/screenshots/ticker.png" alt="Market ticker" width="720" />
+<img src="docs/screenshots/ticker_dark.png" alt="Market ticker, dark mode" width="720" />
 
 ## Architecture (current)
 

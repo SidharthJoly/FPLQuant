@@ -1,0 +1,42 @@
+name: Scheduled injury history ingest
+
+on:
+  schedule:
+    # Weekly (Sundays, 04:00 UTC) — injury history changes slowly, and scraping
+    # the full player pool is rate-limited (~1.5s/request), so this runs far
+    # less often than the daily FPL data ingest.
+    - cron: "0 4 * * 0"
+  workflow_dispatch: {}
+
+jobs:
+  ingest-injuries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Apply migrations
+        run: uv run alembic upgrade head
+
+      - name: Run FPL data ingest (players must exist before injury lookup)
+        run: uv run fplquant-ingest
+
+      - name: Run injury history ingest
+        run: uv run fplquant-ingest-injuries
+
+      - name: Upload database snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: fplquant-db-injuries-${{ github.run_id }}
+          path: data/fplquant.db
+          retention-days: 90

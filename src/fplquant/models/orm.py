@@ -41,10 +41,20 @@ class Player(Base):
     status: Mapped[str] = mapped_column(String(8), default="a")  # a/d/i/s/u
     chance_of_playing_next_round: Mapped[int | None] = mapped_column(Integer, nullable=True)
     news: Mapped[str] = mapped_column(String(512), default="")
+    birth_date: Mapped[dt.date | None] = mapped_column(nullable=True)
     updated_at: Mapped[dt.datetime] = mapped_column(default=lambda: dt.datetime.now(dt.UTC))
+
+    # Transfermarkt match cache: avoids re-searching every ingest run.
+    # transfermarkt_lookup_status: "unresolved" (never tried), "matched", or "unmatched".
+    transfermarkt_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    transfermarkt_slug: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    transfermarkt_lookup_status: Mapped[str] = mapped_column(String(16), default="unresolved")
 
     team: Mapped[Team] = relationship(back_populates="players")
     gameweek_stats: Mapped[list["PlayerGameweekStat"]] = relationship(
+        back_populates="player", cascade="all, delete-orphan"
+    )
+    injury_records: Mapped[list["InjuryRecord"]] = relationship(
         back_populates="player", cascade="all, delete-orphan"
     )
 
@@ -110,3 +120,24 @@ class PlayerGameweekStat(Base):
     transfers_out: Mapped[int] = mapped_column(Integer, default=0)
 
     player: Mapped[Player] = relationship(back_populates="gameweek_stats")
+
+
+class InjuryRecord(Base):
+    """One past injury spell for a player, scraped from Transfermarkt.
+
+    Rows are fully replaced (delete + reinsert) per player on each sync,
+    rather than upserted field-by-field — see fplquant.data.ingest_injuries.
+    """
+
+    __tablename__ = "injury_records"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), index=True)
+    season: Mapped[str] = mapped_column(String(8))  # e.g. "24/25"
+    injury_type: Mapped[str] = mapped_column(String(128))
+    start_date: Mapped[dt.date | None] = mapped_column(nullable=True)
+    end_date: Mapped[dt.date | None] = mapped_column(nullable=True)
+    days_out: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    games_missed: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    player: Mapped[Player] = relationship(back_populates="injury_records")

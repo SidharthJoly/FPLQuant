@@ -19,6 +19,12 @@ def _parse_kickoff(value: str | None) -> dt.datetime | None:
     return dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
+def _parse_birth_date(value: str | None) -> dt.date | None:
+    if not value:
+        return None
+    return dt.date.fromisoformat(value)
+
+
 def upsert_teams(session: Session, teams_payload: list[dict[str, Any]]) -> dict[int, Team]:
     by_fpl_id = {t.fpl_id: t for t in session.query(Team).all()}
     for raw in teams_payload:
@@ -62,6 +68,7 @@ def upsert_players(
         player.status = raw["status"]
         player.chance_of_playing_next_round = raw["chance_of_playing_next_round"]
         player.news = raw.get("news", "") or ""
+        player.birth_date = _parse_birth_date(raw.get("birth_date"))
         player.updated_at = dt.datetime.now(dt.UTC)
     session.flush()
     return by_fpl_id

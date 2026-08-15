@@ -166,22 +166,45 @@ Then: Actions tab → "Deploy backend" → Run workflow.
 ## Scheduled data ingest on the server
 
 The GitHub Actions ingest workflows (`.github/workflows/ingest*.yml`) run in
-CI and upload the resulting SQLite DB as a build artifact — they don't touch
-the deployed server automatically. To keep the live server's data fresh,
-either:
-- run `docker compose exec api uv run fplquant-ingest` (and
-  `fplquant-ingest-injuries`) via cron on the VM itself, or
-- extend the CD workflow to download the latest ingest artifact and swap it
-  in.
+CI and upload the resulting SQLite DB as a build artifact — that's a
+separate, CI-only DB snapshot (useful for local dev/testing), and it doesn't
+touch the deployed server. **The live server keeps itself fresh via cron**,
+running the same CLI commands directly against the running containers:
 
-Not wired up yet — worth doing now that the server is actually live and
-this is a real (not hypothetical) staleness problem.
+`scripts/cron_ingest.sh` and `scripts/cron_ingest_injuries.sh` wrap
+`docker compose exec -T api uv run fplquant-ingest[-injuries]` (`-T` disables
+TTY allocation, needed since cron has no terminal). Set up on the VM:
+
+```bash
+cd ~/FPLQuant && git pull   # pick up the scripts if they weren't there at clone time
+crontab -e
+```
+
+Add these two lines (matching the CI workflows' own cadence — daily FPL
+data, weekly injury scrape since that's rate-limited scraping over the full
+player pool):
+
+```cron
+0 3 * * *   /home/ubuntu/FPLQuant/scripts/cron_ingest.sh >> /home/ubuntu/ingest.log 2>&1
+0 4 * * 0   /home/ubuntu/FPLQuant/scripts/cron_ingest_injuries.sh >> /home/ubuntu/ingest_injuries.log 2>&1
+```
+
+(Adjust the path if the repo isn't cloned to `/home/ubuntu/FPLQuant`.) Check
+`crontab -l` to confirm they're saved, and `tail -f ~/ingest.log` after the
+next scheduled run (or trigger one manually — `~/FPLQuant/scripts/cron_ingest.sh`
+— to test immediately rather than waiting).
 
 ## Oracle Always Free: the idle-reclaim gotcha
 
 Oracle reclaims Always Free compute instances that sit idle (CPU, network,
 and — for A1/ARM shapes only — memory all under 20% utilization) for a full
 7 days straight. For a low-traffic personal project this is a real risk,
-not theoretical. Mitigation: a free uptime monitor (e.g. UptimeRobot)
-pinging `/health` every few minutes keeps enough baseline traffic to stay
-above the threshold. Not set up yet.
+not theoretical.
+
+**Mitigation: `.github/workflows/keepalive.yml`**, a GitHub Actions
+scheduled workflow that pings `/health` every 15 minutes. Kept in-repo
+rather than a third-party uptime monitor (e.g. UptimeRobot) so there's no
+extra account to manage — public repos get unlimited free Actions minutes,
+so cost isn't a concern. Failures are non-fatal by design (`|| echo ...`) —
+it's a keep-alive ping, not an uptime monitor; a brief outage during a
+redeploy shouldn't spam notification emails.

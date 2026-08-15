@@ -262,10 +262,10 @@ Split across two hosts, both live:
   this up, in [`DEPLOYMENT.md`](DEPLOYMENT.md). Redeploys via
   `.github/workflows/deploy.yml` (manually triggered).
 
-Not yet done: keeping the deployed server's data fresh automatically (the
-scheduled ingest workflows currently only run in CI, not against the live
-server — see `DEPLOYMENT.md`'s last section), and a keep-alive ping against
-Oracle's idle-instance reclaim policy.
+The live server also keeps its own data fresh (cron on the VM,
+`scripts/cron_ingest*.sh`) and stays clear of Oracle's idle-instance reclaim
+policy (`.github/workflows/keepalive.yml`, pings `/health` every 15 min) —
+both detailed in `DEPLOYMENT.md`.
 
 ## License
 

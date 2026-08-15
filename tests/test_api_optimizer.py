@@ -108,3 +108,27 @@ def test_optimize_second_identical_request_returns_cached_response(
     second = api_client.post("/optimize", json=request).json()
 
     assert first == second
+
+
+def test_optimize_recovers_from_a_stale_cache_entry(
+    db_session: Session, api_client: TestClient
+) -> None:
+    """Reproduces a real production incident: a cache entry written before a
+    response-schema change (a new required field) must not 500 the request
+    — it should be treated as a cache miss, recomputed, and the stale entry
+    overwritten."""
+    _seed_full_pool(db_session)
+    request = {"budget": 100.0, "max_per_club": 3}
+
+    key = _cache_key(OptimizeRequest(**request))
+    stale_payload = '{"total_cost": 900, "total_predicted_points": 30.0, "squad": []}'
+    cache_module.get_client().set(key, stale_payload, ex=3600)
+
+    response = api_client.post("/optimize", json=request)
+
+    assert response.status_code == 200
+    assert "starting_xi" in response.json()
+
+    # The stale entry should have been overwritten with a valid one.
+    refreshed = cache_module.get_client().get(key)
+    assert "starting_xi" in refreshed

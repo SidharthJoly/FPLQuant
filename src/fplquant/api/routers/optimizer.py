@@ -1,6 +1,8 @@
 import hashlib
+import logging
 
 from fastapi import APIRouter, Depends
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from fplquant.api import schemas
@@ -16,6 +18,7 @@ from fplquant.optimizer.starting_xi import select_starting_xi
 from fplquant.optimizer.types import SquadConstraints
 
 router = APIRouter(tags=["optimizer"])
+logger = logging.getLogger(__name__)
 
 
 def _cache_key(request: schemas.OptimizeRequest) -> str:
@@ -36,7 +39,15 @@ def optimize(
     cache_key = _cache_key(request)
     cached = cache_get(cache_key)
     if cached is not None:
-        return schemas.OptimizeResponse.model_validate_json(cached)
+        try:
+            return schemas.OptimizeResponse.model_validate_json(cached)
+        except ValidationError:
+            # A cache entry from before a response-schema change (e.g. a new
+            # required field) — treat exactly like a cache miss rather than
+            # failing the request. A cache is never allowed to be a hard
+            # dependency for correctness, whether it's unreachable (see
+            # cache.py) or just stale in a way that no longer deserializes.
+            logger.warning("Discarding stale cache entry for key=%s", cache_key)
 
     constraints = SquadConstraints(
         budget=round(request.budget * 10), max_per_club=request.max_per_club

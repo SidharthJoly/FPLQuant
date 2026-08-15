@@ -10,11 +10,10 @@ risk-adjusted squad.
 
 ## Status
 
-🚧 Early scaffold, but all 9 planned milestones are now in place: data
-pipeline, form analysis, ILP optimizer (raw and risk-adjusted), injury risk,
-stock-market layer, player similarity finder, FastAPI backend, and a
-frontend dashboard. Deployment (DigitalOcean droplet + custom domain) is
-next, and isn't started yet.
+✅ All 9 planned milestones are in place, and it's live:
+**[sidharthjoly.github.io/FPLQuant](https://sidharthjoly.github.io/FPLQuant/)**
+(frontend, GitHub Pages) talking to a real backend on an Oracle Cloud Always
+Free VM at `https://fplquant.duckdns.org` (see [`DEPLOYMENT.md`](DEPLOYMENT.md)).
 
 ## Screenshots
 
@@ -190,11 +189,9 @@ docker compose up          # api (port 8000) + redis (port 6379), one command
 docker compose exec api uv run fplquant-ingest   # populate data inside the container
 ```
 
-The Docker setup (`Dockerfile`, `docker-compose.yml`) hasn't been verified in
-this environment (no Docker available here) — flagging that explicitly rather
-than claiming it's been tested. It follows the standard uv-in-Docker pattern;
-if something's off on first run, it's most likely a path or permissions issue
-in the Dockerfile.
+The Docker setup (`Dockerfile`, `docker-compose.yml`) is running in
+production on the deployed backend (see Deployment below) — built and
+verified for real on the actual VM, not just locally.
 
 The frontend itself *was* visually verified — headless Chromium against a
 locally-seeded database (real FPL bootstrap data plus synthetic gameweek
@@ -252,18 +249,23 @@ uv run alembic upgrade head
 
 ## Deployment
 
-Split across two hosts:
+Split across two hosts, both live:
 
 - **Frontend** — [GitHub Pages](https://sidharthjoly.github.io/FPLQuant/),
-  live via `.github/workflows/pages.yml` (deploys on every push touching
-  `frontend/`). ✅ Done.
-- **Backend** (FastAPI + Redis) — not started. DigitalOcean's GitHub Student
-  Pack offer expired (July 31, 2026) before it got redeemed, so the plan
-  moved to Oracle Cloud's "Always Free" tier instead — see
-  [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full runbook (VM setup, first
-  deploy, HTTPS/custom domain, and the manually-triggered CD workflow,
-  `.github/workflows/deploy.yml`). Needs the VM created by hand first
-  (account access, not something automatable here).
+  deploys via `.github/workflows/pages.yml` on every push touching `frontend/`.
+- **Backend** (FastAPI + Redis) — an Oracle Cloud "Always Free" VM
+  (DigitalOcean's GitHub Student Pack offer expired before it got redeemed,
+  so the plan moved here instead), fronted by Caddy at
+  `https://fplquant.duckdns.org` for automatic, permanently-free HTTPS
+  (DuckDNS + Let's Encrypt — no purchased domain, no expiring credit). Full
+  runbook, including the OCI-specific firewall gotchas that came up setting
+  this up, in [`DEPLOYMENT.md`](DEPLOYMENT.md). Redeploys via
+  `.github/workflows/deploy.yml` (manually triggered).
+
+Not yet done: keeping the deployed server's data fresh automatically (the
+scheduled ingest workflows currently only run in CI, not against the live
+server — see `DEPLOYMENT.md`'s last section), and a keep-alive ping against
+Oracle's idle-instance reclaim policy.
 
 ## License
 

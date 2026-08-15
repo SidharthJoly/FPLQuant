@@ -6,9 +6,9 @@
 // deploying. Example:
 //   export const API_BASE = "https://api.fplquant.example.com";
 //
-// TODO: switch to https://<custom-domain> once the Student Pack domain +
-// Caddy/a named Cloudflare tunnel are set up (DEPLOYMENT.md §4). The
-// trycloudflare.com URL below is a *quick* tunnel — it changes on every
-// `cloudflared` restart, so this line will need updating again if the
-// tunnel process ever restarts before a permanent domain is in place.
-export const API_BASE = "https://clouds-trackback-pension-exemption.trycloudflare.com";
+// Permanent: fplquant.duckdns.org (free DuckDNS subdomain) -> Caddy on the
+// Oracle Cloud VM -> the API on localhost:8000. Caddy auto-manages a real
+// Let's Encrypt certificate for this hostname, no expiring quick-tunnel URL
+// involved. If the VM's IP ever changes (e.g. instance recreated), update
+// the DuckDNS record's IP — this URL itself doesn't need to change.
+export const API_BASE = "https://fplquant.duckdns.org";

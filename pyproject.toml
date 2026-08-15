@@ -11,9 +11,11 @@ dependencies = [
     "alembic>=1.19.1",
     "beautifulsoup4>=4.15.0",
     "lxml>=6.1.1",
+    "numpy>=2.5.2",
     "pulp>=3.3.2",
     "pydantic-settings>=2.15.0",
     "requests>=2.34.2",
+    "scikit-learn>=1.9.0",
     "sqlalchemy>=2.0.52",
 ]
 
@@ -24,6 +26,8 @@ fplquant-optimize = "fplquant.optimizer.cli:main"
 fplquant-ingest-injuries = "fplquant.data.ingest_injuries:main"
 fplquant-risk = "fplquant.risk.cli:main"
 fplquant-market = "fplquant.market.cli:main"
+fplquant-similar = "fplquant.similarity.cli:main"
+fplquant-projection = "fplquant.similarity.projection_cli:main"
 
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]
@@ -62,6 +66,10 @@ explicit_package_bases = true
 
 [[tool.mypy.overrides]]
 module = "pulp.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sklearn.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

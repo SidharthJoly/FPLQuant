@@ -26,7 +26,7 @@ searchInput.addEventListener("input", () => {
     resultsList.hidden = true;
     return;
   }
-  searchDebounce = setTimeout(() => runSearch(query), 250);
+  searchDebounce = setTimeout(() => runSearch(query), 150);
 });
 
 document.addEventListener("click", (event) => {

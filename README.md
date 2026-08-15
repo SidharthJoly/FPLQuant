@@ -232,8 +232,18 @@ uv run alembic upgrade head
   guessed at. Intended for personal, non-commercial analytics use — this is
   markup-scraping, not an API contract, so it may need adjustment if
   Transfermarkt changes their page structure.
-- **FBref / StatsBomb open data** — richer underlying stats (progressive
-  passes, etc). Planned.
+- **FBref / StatsBomb open data** — investigated, not pursued. StatsBomb's
+  open dataset (github.com/statsbomb/open-data) doesn't cover any recent
+  Premier League season (last EPL coverage: 2015/16), so it can't enrich the
+  current player pool. FBref has the right current-season data
+  (progressive passes, etc.) but sits behind a Cloudflare bot challenge that
+  blocks even a real headless browser — a deliberate anti-scraping measure,
+  not light filtering, so it wasn't pursued further. A second candidate
+  (one-versus-one.com) was technically scrapable but explicitly disallows
+  `ClaudeBot` and most AI crawlers by name in `robots.txt`, so that wasn't
+  pursued either. FPL's own `ict_index`/`creativity`/`threat`/`influence`
+  and xG/xA remain the underlying-stats signal used throughout (form
+  scoring, injury risk, similarity finder).
 
 ## Roadmap
 

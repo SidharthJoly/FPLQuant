@@ -20,6 +20,8 @@ def _player(
     first_name: str | None = None,
     second_name: str | None = None,
     selected_by_percent: float = 0.0,
+    code: int | None = None,
+    nationality: str | None = None,
 ) -> Player:
     player = Player(
         fpl_id=fpl_id,
@@ -32,6 +34,8 @@ def _player(
         status="a",
         ep_next=5.0,
         selected_by_percent=selected_by_percent,
+        code=code,
+        nationality=nationality,
     )
     session.add(player)
     session.flush()
@@ -169,6 +173,47 @@ def test_list_players_limit_caps_results(db_session: Session, api_client: TestCl
 def test_list_players_rejects_invalid_sort(db_session: Session, api_client: TestClient) -> None:
     response = api_client.get("/players", params={"sort": "nonsense"})
     assert response.status_code == 422
+
+
+def test_list_players_includes_full_name_nationality_and_photo(
+    db_session: Session, api_client: TestClient
+) -> None:
+    team = _team(db_session)
+    _player(
+        db_session,
+        team,
+        1,
+        "Saka",
+        first_name="Bukayo",
+        second_name="Saka",
+        code=433177,
+        nationality="England",
+    )
+    db_session.commit()
+
+    response = api_client.get("/players")
+
+    body = response.json()[0]
+    assert body["full_name"] == "Bukayo Saka"
+    assert body["nationality"] == "England"
+    assert (
+        body["photo_url"]
+        == "https://resources.premierleague.com/premierleague/photos/players/250x250/p433177.png"
+    )
+
+
+def test_list_players_photo_url_and_nationality_are_none_when_unresolved(
+    db_session: Session, api_client: TestClient
+) -> None:
+    team = _team(db_session)
+    _player(db_session, team, 1, "NoData")
+    db_session.commit()
+
+    response = api_client.get("/players")
+
+    body = response.json()[0]
+    assert body["photo_url"] is None
+    assert body["nationality"] is None
 
 
 def test_get_player_404_when_missing(api_client: TestClient) -> None:

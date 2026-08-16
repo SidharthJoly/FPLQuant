@@ -71,6 +71,10 @@ class TransfermarktClient:
         soup = self._get_soup(f"/{slug}/verletzungen/spieler/{transfermarkt_id}")
         return parse_injury_history(soup)
 
+    def get_nationality(self, slug: str, transfermarkt_id: int) -> str | None:
+        soup = self._get_soup(f"/{slug}/profil/spieler/{transfermarkt_id}")
+        return parse_nationality(soup)
+
     def close(self) -> None:
         self.session.close()
 
@@ -110,6 +114,24 @@ def parse_search_results(soup: BeautifulSoup) -> list[TransfermarktSearchResult]
             )
         )
     return results
+
+
+def parse_nationality(soup: BeautifulSoup) -> str | None:
+    """Citizenship from a player's profile page, e.g. "England" or "Norway".
+
+    Dual citizens show multiple flag images in the same span (no separating
+    text), so the flag `title` attributes are used rather than the span's
+    raw text, which would otherwise run the country names together.
+    """
+    span = soup.find("span", itemprop="nationality")
+    if span is None or not isinstance(span, Tag):
+        return None
+    flags = span.find_all("img", class_="flaggenrahmen")
+    names = [str(f.get("title", "")).strip() for f in flags if f.get("title")]
+    if names:
+        return " / ".join(dict.fromkeys(names))
+    text = span.get_text(strip=True)
+    return text or None
 
 
 def parse_injury_history(soup: BeautifulSoup) -> list[InjuryRecordData]:

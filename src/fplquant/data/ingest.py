@@ -59,6 +59,7 @@ def upsert_players(
         player.first_name = raw["first_name"]
         player.second_name = raw["second_name"]
         player.web_name = raw["web_name"]
+        player.code = raw.get("code")
         player.element_type = raw["element_type"]
         player.now_cost = raw["now_cost"]
         player.selected_by_percent = as_float(raw["selected_by_percent"])

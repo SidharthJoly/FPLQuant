@@ -31,6 +31,7 @@ def test_upsert_players_links_to_team(db_session: Session) -> None:
     assert player.web_name == "Raya"
     assert player.team.short_name == "ARS"
     assert player.selected_by_percent == 31.2
+    assert player.code == 154561
 
 
 def test_upsert_fixtures(db_session: Session) -> None:

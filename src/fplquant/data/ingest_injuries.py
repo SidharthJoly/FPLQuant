@@ -62,6 +62,20 @@ def sync_injury_history(session: Session, client: TransfermarktClient, player: P
     session.flush()
 
 
+def sync_nationality(session: Session, client: TransfermarktClient, player: Player) -> None:
+    """Fetch and store `player`'s nationality from their Transfermarkt profile.
+
+    Unlike injury history, nationality doesn't change, so this only needs to
+    run once per player — callers should only call it for players where
+    `nationality is None`, to avoid re-fetching a page for no reason.
+    """
+    if player.transfermarkt_id is None or player.transfermarkt_slug is None:
+        return
+
+    player.nationality = client.get_nationality(player.transfermarkt_slug, player.transfermarkt_id)
+    session.flush()
+
+
 def run_injury_ingest(
     client: TransfermarktClient | None = None,
     limit: int | None = None,
@@ -99,6 +113,18 @@ def run_injury_ingest(
                 time.sleep(delay)
                 if i % 25 == 0 or i == len(matched):
                     logger.info("Synced injury history for %d/%d players", i, len(matched))
+
+        with session_scope() as session:
+            needs_nationality = (
+                session.query(Player)
+                .filter_by(transfermarkt_lookup_status="matched", nationality=None)
+                .all()
+            )
+            for i, player in enumerate(needs_nationality, start=1):
+                sync_nationality(session, client, player)
+                time.sleep(delay)
+                if i % 25 == 0 or i == len(needs_nationality):
+                    logger.info("Fetched nationality for %d/%d players", i, len(needs_nationality))
     finally:
         if owns_client:
             client.close()

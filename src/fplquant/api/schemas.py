@@ -11,6 +11,7 @@ class PlayerOut(BaseModel):
     id: int
     fpl_id: int
     web_name: str
+    full_name: str
     team_id: int
     team_short_name: str
     element_type: int
@@ -19,6 +20,8 @@ class PlayerOut(BaseModel):
     selected_by_percent: float
     form: float
     ep_next: float
+    nationality: str | None = None
+    photo_url: str | None = None
 
 
 class FormScoreOut(BaseModel):

@@ -2,7 +2,11 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 
-from fplquant.data.transfermarkt_client import parse_injury_history, parse_search_results
+from fplquant.data.transfermarkt_client import (
+    parse_injury_history,
+    parse_nationality,
+    parse_search_results,
+)
 
 FIXTURES_DIR = Path(__file__).parent / "data" / "transfermarkt"
 
@@ -44,3 +48,26 @@ def test_parse_injury_history_extracts_records() -> None:
 def test_parse_injury_history_on_empty_page_returns_empty_list() -> None:
     soup = BeautifulSoup("<html><body>no results</body></html>", "lxml")
     assert parse_injury_history(soup) == []
+
+
+def test_parse_nationality_extracts_country() -> None:
+    assert parse_nationality(_soup("profile_bukayo_saka.html")) == "England"
+
+
+def test_parse_nationality_on_empty_page_returns_none() -> None:
+    soup = BeautifulSoup("<html><body>no results</body></html>", "lxml")
+    assert parse_nationality(soup) is None
+
+
+def test_parse_nationality_joins_multiple_flags_for_dual_citizenship() -> None:
+    soup = BeautifulSoup(
+        """
+        <span itemprop="nationality" class="data-header__content">
+            <img class="flaggenrahmen" title="Nigeria" alt="Nigeria" />
+            <img class="flaggenrahmen" title="England" alt="England" />
+            Nigeria England
+        </span>
+        """,
+        "lxml",
+    )
+    assert parse_nationality(soup) == "Nigeria / England"

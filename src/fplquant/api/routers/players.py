@@ -42,11 +42,20 @@ def _search_relevance(player: Player, query: str) -> int | None:
     return None
 
 
+def _photo_url(code: int | None) -> str | None:
+    # The official FPL asset CDN — the same photo URL pattern the live FPL
+    # site itself uses, keyed on the bootstrap-static "code" field.
+    if code is None:
+        return None
+    return f"https://resources.premierleague.com/premierleague/photos/players/250x250/p{code}.png"
+
+
 def _to_player_out(player: Player) -> schemas.PlayerOut:
     return schemas.PlayerOut(
         id=player.id,
         fpl_id=player.fpl_id,
         web_name=player.web_name,
+        full_name=f"{player.first_name} {player.second_name}",
         team_id=player.team_id,
         team_short_name=player.team.short_name,
         element_type=player.element_type,
@@ -55,6 +64,8 @@ def _to_player_out(player: Player) -> schemas.PlayerOut:
         selected_by_percent=player.selected_by_percent,
         form=player.form,
         ep_next=player.ep_next,
+        nationality=player.nationality,
+        photo_url=_photo_url(player.code),
     )
 
 

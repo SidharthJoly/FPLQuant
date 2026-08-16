@@ -32,6 +32,7 @@ class Player(Base):
     first_name: Mapped[str] = mapped_column(String(64))
     second_name: Mapped[str] = mapped_column(String(64))
     web_name: Mapped[str] = mapped_column(String(64))
+    code: Mapped[int | None] = mapped_column(Integer, nullable=True)  # FPL asset id -> headshot URL
     element_type: Mapped[int] = mapped_column(Integer)  # 1=GKP 2=DEF 3=MID 4=FWD
     now_cost: Mapped[int] = mapped_column(Integer)  # tenths of a million, e.g. 105 = £10.5m
     selected_by_percent: Mapped[float] = mapped_column(Float, default=0.0)
@@ -49,6 +50,7 @@ class Player(Base):
     transfermarkt_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     transfermarkt_slug: Mapped[str | None] = mapped_column(String(128), nullable=True)
     transfermarkt_lookup_status: Mapped[str] = mapped_column(String(16), default="unresolved")
+    nationality: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     team: Mapped[Team] = relationship(back_populates="players")
     gameweek_stats: Mapped[list["PlayerGameweekStat"]] = relationship(

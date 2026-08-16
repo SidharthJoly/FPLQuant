@@ -2,7 +2,11 @@ import datetime as dt
 
 from sqlalchemy.orm import Session
 
-from fplquant.data.ingest_injuries import resolve_transfermarkt_id, sync_injury_history
+from fplquant.data.ingest_injuries import (
+    resolve_transfermarkt_id,
+    sync_injury_history,
+    sync_nationality,
+)
 from fplquant.data.transfermarkt_client import InjuryRecordData, TransfermarktSearchResult
 from fplquant.models.orm import InjuryRecord, Player, Team
 
@@ -12,11 +16,14 @@ class StubTransfermarktClient:
         self,
         search_results: list[TransfermarktSearchResult],
         injury_records: list[InjuryRecordData],
+        nationality: str | None = None,
     ) -> None:
         self._search_results = search_results
         self._injury_records = injury_records
+        self._nationality = nationality
         self.search_calls: list[str] = []
         self.injury_calls: list[tuple[str, int]] = []
+        self.nationality_calls: list[tuple[str, int]] = []
 
     def search_player(self, name: str) -> list[TransfermarktSearchResult]:
         self.search_calls.append(name)
@@ -25,6 +32,10 @@ class StubTransfermarktClient:
     def get_injury_history(self, slug: str, transfermarkt_id: int) -> list[InjuryRecordData]:
         self.injury_calls.append((slug, transfermarkt_id))
         return self._injury_records
+
+    def get_nationality(self, slug: str, transfermarkt_id: int) -> str | None:
+        self.nationality_calls.append((slug, transfermarkt_id))
+        return self._nationality
 
 
 def _team_and_player(session: Session) -> Player:
@@ -130,3 +141,27 @@ def test_sync_injury_history_noop_when_unresolved(db_session: Session) -> None:
     sync_injury_history(db_session, client, player)  # type: ignore[arg-type]
 
     assert client.injury_calls == []
+
+
+def test_sync_nationality_stores_result(db_session: Session) -> None:
+    player = _team_and_player(db_session)
+    player.transfermarkt_id = 433177
+    player.transfermarkt_slug = "bukayo-saka"
+    db_session.flush()
+
+    client = StubTransfermarktClient(search_results=[], injury_records=[], nationality="England")
+
+    sync_nationality(db_session, client, player)  # type: ignore[arg-type]
+
+    assert player.nationality == "England"
+    assert client.nationality_calls == [("bukayo-saka", 433177)]
+
+
+def test_sync_nationality_noop_when_unresolved(db_session: Session) -> None:
+    player = _team_and_player(db_session)
+    client = StubTransfermarktClient(search_results=[], injury_records=[], nationality="England")
+
+    sync_nationality(db_session, client, player)  # type: ignore[arg-type]
+
+    assert player.nationality is None
+    assert client.nationality_calls == []

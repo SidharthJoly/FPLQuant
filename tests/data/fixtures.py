@@ -32,6 +32,7 @@ ELEMENTS_PAYLOAD = [
         "first_name": "David",
         "second_name": "Raya",
         "web_name": "Raya",
+        "code": 154561,
         "element_type": 1,
         "now_cost": 55,
         "selected_by_percent": "31.2",

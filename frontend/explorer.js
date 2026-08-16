@@ -151,15 +151,49 @@ async function selectPlayer(playerId) {
 
 function renderHeader(player) {
   clear(playerHeaderEl);
-  const left = document.createElement("div");
+
+  const avatar = document.createElement("div");
+  avatar.className = "player-header__avatar";
+  if (player.photo_url) {
+    const img = document.createElement("img");
+    img.className = "player-header__photo";
+    img.src = player.photo_url;
+    img.alt = player.full_name;
+    img.addEventListener("error", () => {
+      img.remove();
+      avatar.appendChild(initialsAvatar(player));
+    });
+    avatar.appendChild(img);
+  } else {
+    avatar.appendChild(initialsAvatar(player));
+  }
+
+  const info = document.createElement("div");
   const h2 = document.createElement("h2");
-  h2.textContent = player.web_name;
+  h2.textContent = player.full_name;
   const meta = document.createElement("div");
   meta.className = "player-header__meta";
   meta.textContent = `${player.team_short_name} · ${POSITION_NAMES[player.element_type]} · £${(player.now_cost / 10).toFixed(1)}m`;
-  left.appendChild(h2);
-  left.appendChild(meta);
-  playerHeaderEl.appendChild(left);
+  info.appendChild(h2);
+  info.appendChild(meta);
+  if (player.nationality) {
+    const badge = document.createElement("span");
+    badge.className = "nationality-badge";
+    badge.textContent = player.nationality;
+    info.appendChild(badge);
+  }
+
+  playerHeaderEl.appendChild(avatar);
+  playerHeaderEl.appendChild(info);
+}
+
+function initialsAvatar(player) {
+  const el = document.createElement("div");
+  el.className = "player-header__initials";
+  const parts = player.full_name.split(" ").filter(Boolean);
+  const initials = parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0]?.[0] ?? "?");
+  el.textContent = initials.toUpperCase();
+  return el;
 }
 
 async function loadFormTrend(playerId, player) {

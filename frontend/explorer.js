@@ -14,19 +14,37 @@ const similarPlayersEl = document.getElementById("similar-players");
 const cheaperOnlyCheckbox = document.getElementById("cheaper-only");
 const anyPositionCheckbox = document.getElementById("any-position");
 
+const RECENT_KEY = "fplquant:recentPlayers";
+const RECENT_LIMIT = 5;
+const POPULAR_LIMIT = 8;
+
 let currentPlayerId = null;
 let searchDebounce = null;
 let latestSearchQuery = "";
+let suggestionsRequestId = 0;
 
 searchInput.addEventListener("input", () => {
   clearTimeout(searchDebounce);
   const query = searchInput.value.trim();
+  latestSearchQuery = query;
+  if (query.length === 0) {
+    showSuggestions();
+    return;
+  }
   if (query.length < 2) {
-    latestSearchQuery = "";
     resultsList.hidden = true;
     return;
   }
   searchDebounce = setTimeout(() => runSearch(query), 150);
+});
+
+searchInput.addEventListener("focus", () => {
+  const query = searchInput.value.trim();
+  if (query.length === 0) {
+    showSuggestions();
+  } else if (query.length >= 2) {
+    runSearch(query);
+  }
 });
 
 document.addEventListener("click", (event) => {
@@ -34,6 +52,69 @@ document.addEventListener("click", (event) => {
     resultsList.hidden = true;
   }
 });
+
+function getRecentPlayers() {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function pushRecentPlayer(player) {
+  const entry = {
+    id: player.id,
+    web_name: player.web_name,
+    team_short_name: player.team_short_name,
+    element_type: player.element_type,
+  };
+  const recent = getRecentPlayers().filter((p) => p.id !== entry.id);
+  recent.unshift(entry);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(recent.slice(0, RECENT_LIMIT)));
+}
+
+async function showSuggestions() {
+  const requestId = ++suggestionsRequestId;
+  clear(resultsList);
+
+  const recent = getRecentPlayers();
+  addResultSection("Recent", recent);
+  resultsList.hidden = resultsList.children.length === 0;
+
+  const popular = await api.listPlayers({ sort: "popularity", limit: POPULAR_LIMIT });
+  const stillRelevant = requestId === suggestionsRequestId && searchInput.value.trim().length === 0;
+  if (!stillRelevant) return;
+
+  const recentIds = new Set(recent.map((p) => p.id));
+  addResultSection(
+    "Popular",
+    popular.filter((p) => !recentIds.has(p.id))
+  );
+  resultsList.hidden = resultsList.children.length === 0;
+}
+
+function addResultSection(label, players) {
+  if (players.length === 0) return;
+  const header = document.createElement("li");
+  header.className = "search-results__header";
+  header.textContent = label;
+  resultsList.appendChild(header);
+  for (const player of players) {
+    resultsList.appendChild(resultItem(player));
+  }
+}
+
+function resultItem(player) {
+  const li = document.createElement("li");
+  li.textContent = `${player.web_name} (${player.team_short_name}, ${POSITION_NAMES[player.element_type]})`;
+  li.addEventListener("click", () => choosePlayer(player));
+  return li;
+}
+
+function choosePlayer(player) {
+  pushRecentPlayer(player);
+  selectPlayer(player.id);
+}
 
 cheaperOnlyCheckbox.addEventListener("change", () => currentPlayerId && loadSimilar(currentPlayerId));
 anyPositionCheckbox.addEventListener("change", () => currentPlayerId && loadSimilar(currentPlayerId));
@@ -51,10 +132,7 @@ async function runSearch(query) {
     return;
   }
   for (const player of players.slice(0, 10)) {
-    const li = document.createElement("li");
-    li.textContent = `${player.web_name} (${player.team_short_name}, ${POSITION_NAMES[player.element_type]})`;
-    li.addEventListener("click", () => selectPlayer(player.id));
-    resultsList.appendChild(li);
+    resultsList.appendChild(resultItem(player));
   }
   resultsList.hidden = false;
 }

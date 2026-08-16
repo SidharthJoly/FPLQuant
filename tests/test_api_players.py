@@ -19,6 +19,7 @@ def _player(
     element_type: int = 4,
     first_name: str | None = None,
     second_name: str | None = None,
+    selected_by_percent: float = 0.0,
 ) -> Player:
     player = Player(
         fpl_id=fpl_id,
@@ -30,6 +31,7 @@ def _player(
         now_cost=80,
         status="a",
         ep_next=5.0,
+        selected_by_percent=selected_by_percent,
     )
     session.add(player)
     session.flush()
@@ -138,6 +140,35 @@ def test_search_matches_nothing_returns_empty_list(
     response = api_client.get("/players", params={"search": "zzznomatch"})
 
     assert response.json() == []
+
+
+def test_list_players_sorted_by_popularity(db_session: Session, api_client: TestClient) -> None:
+    team = _team(db_session)
+    _player(db_session, team, 1, "LowOwned", selected_by_percent=2.0)
+    _player(db_session, team, 2, "TopOwned", selected_by_percent=45.0)
+    _player(db_session, team, 3, "MidOwned", selected_by_percent=15.0)
+    db_session.commit()
+
+    response = api_client.get("/players", params={"sort": "popularity"})
+
+    body = response.json()
+    assert [p["web_name"] for p in body] == ["TopOwned", "MidOwned", "LowOwned"]
+
+
+def test_list_players_limit_caps_results(db_session: Session, api_client: TestClient) -> None:
+    team = _team(db_session)
+    for i in range(5):
+        _player(db_session, team, i + 1, f"P{i}")
+    db_session.commit()
+
+    response = api_client.get("/players", params={"limit": 2})
+
+    assert len(response.json()) == 2
+
+
+def test_list_players_rejects_invalid_sort(db_session: Session, api_client: TestClient) -> None:
+    response = api_client.get("/players", params={"sort": "nonsense"})
+    assert response.status_code == 422
 
 
 def test_get_player_404_when_missing(api_client: TestClient) -> None:

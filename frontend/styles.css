@@ -267,6 +267,17 @@ input[type="number"], input[type="search"], input[type="text"], select {
 .search-results li:first-child { border-top: none; }
 .search-results li:hover { background: var(--surface-2); }
 
+.search-results__header {
+  padding: 6px 10px 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  cursor: default;
+}
+.search-results__header:hover { background: none; }
+
 .empty-state { color: var(--text-muted); font-size: 0.9rem; padding: 24px 0; text-align: center; }
 
 .player-header { display: flex; justify-content: space-between; align-items: center; }

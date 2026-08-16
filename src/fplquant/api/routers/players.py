@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, selectinload
 
@@ -62,6 +64,8 @@ def list_players(
     team_id: int | None = None,
     max_cost: int | None = None,
     search: str | None = None,
+    sort: Literal["popularity"] | None = None,
+    limit: int | None = None,
     session: Session = Depends(get_session),
 ) -> list[schemas.PlayerOut]:
     query = session.query(Player).options(selectinload(Player.team))
@@ -74,10 +78,17 @@ def list_players(
 
     players = query.all()
     if search:
+        # An active search query wins over `sort` — relevance is what
+        # matters once the user has typed something, same as Google.
         scored = [(p, _search_relevance(p, search)) for p in players]
         matches = [(p, score) for p, score in scored if score is not None]
         matches.sort(key=lambda pair: (pair[1], pair[0].web_name))
         players = [p for p, _ in matches]
+    elif sort == "popularity":
+        players.sort(key=lambda p: p.selected_by_percent, reverse=True)
+
+    if limit is not None:
+        players = players[:limit]
 
     return [_to_player_out(p) for p in players]
 

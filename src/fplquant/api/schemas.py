@@ -54,6 +54,10 @@ class InjuryRiskOut(BaseModel):
 class PlayerDetailOut(PlayerOut):
     form_score: FormScoreOut | None = None
     injury_risk: InjuryRiskOut | None = None
+    next_opponent: str | None = None
+    next_opponent_is_home: bool | None = None
+    fixture_difficulty: int | None = None
+    chance_of_playing: float = 1.0
 
 
 class PlayerGameweekStatOut(BaseModel):
@@ -71,6 +75,7 @@ class PriceMomentumOut(BaseModel):
 
     player_id: int
     web_name: str
+    team_short_name: str = ""
     gameweeks_considered: int
     price_change: int
     price_change_pct: float
@@ -108,6 +113,7 @@ class SimilarPlayerOut(BaseModel):
     player_id: int
     web_name: str
     team_id: int
+    team_short_name: str
     now_cost: int
     similarity: float
 
@@ -207,3 +213,10 @@ class TransferPlanResponse(BaseModel):
     worth_it: bool
     resulting_squad: list[SquadPlayerOut]
     starting_xi: StartingXIOut
+
+
+class NextDeadlineOut(BaseModel):
+    deadline: str | None = Field(
+        default=None, description="ISO 8601 UTC deadline for the next gameweek, or null preseason"
+    )
+    gameweek: int | None = None

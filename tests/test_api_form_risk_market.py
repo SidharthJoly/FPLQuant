@@ -76,6 +76,7 @@ def test_market_momentum_endpoint(db_session: Session, api_client: TestClient) -
     body = response.json()
     assert len(body) == 1
     assert body[0]["price_change"] == 2  # value 81 -> 83 over 3 gameweeks
+    assert body[0]["team_short_name"] == "ARS"
 
 
 def test_market_volatility_endpoint(db_session: Session, api_client: TestClient) -> None:

@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from fplquant.api import schemas
 from fplquant.api.deps import get_session
 from fplquant.market.correlation import compute_teammate_correlations
 from fplquant.market.momentum import compute_price_momentum_scores
 from fplquant.market.volatility import compute_volatility_scores
+from fplquant.models.orm import Player
 
 router = APIRouter(prefix="/market", tags=["market"])
 
@@ -15,7 +16,28 @@ def get_momentum(
     top: int = 20, lookback: int = 5, session: Session = Depends(get_session)
 ) -> list[schemas.PriceMomentumOut]:
     scores = compute_price_momentum_scores(session, lookback=lookback)[:top]
-    return [schemas.PriceMomentumOut.model_validate(s) for s in scores]
+
+    teams_by_player_id = {
+        p.id: p.team.short_name
+        for p in session.query(Player)
+        .options(selectinload(Player.team))
+        .filter(Player.id.in_([s.player_id for s in scores]))
+        .all()
+    }
+    return [
+        schemas.PriceMomentumOut(
+            player_id=s.player_id,
+            web_name=s.web_name,
+            team_short_name=teams_by_player_id.get(s.player_id, ""),
+            gameweeks_considered=s.gameweeks_considered,
+            price_change=s.price_change,
+            price_change_pct=s.price_change_pct,
+            net_transfers=s.net_transfers,
+            ownership_change=s.ownership_change,
+            ownership_change_pct=s.ownership_change_pct,
+        )
+        for s in scores
+    ]
 
 
 @router.get("/volatility", response_model=list[schemas.VolatilityScoreOut])

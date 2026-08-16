@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from fplquant.api import schemas
 from fplquant.api.deps import get_session
+from fplquant.form.fixtures import compute_fixture_adjusted_scores
 from fplquant.form.scoring import compute_form_scores
 from fplquant.models.orm import Player, PlayerGameweekStat
 from fplquant.risk.injury import compute_injury_risk_scores
@@ -112,11 +113,18 @@ def get_player(player_id: int, session: Session = Depends(get_session)) -> schem
 
     form = next((s for s in compute_form_scores(session) if s.player_id == player_id), None)
     risk = next((s for s in compute_injury_risk_scores(session) if s.player_id == player_id), None)
+    fixture = next(
+        (s for s in compute_fixture_adjusted_scores(session) if s.player_id == player_id), None
+    )
 
     return schemas.PlayerDetailOut(
         **_to_player_out(player).model_dump(),
         form_score=schemas.FormScoreOut.model_validate(form) if form else None,
         injury_risk=schemas.InjuryRiskOut.model_validate(risk) if risk else None,
+        next_opponent=fixture.opponent_short_name if fixture else None,
+        next_opponent_is_home=fixture.is_home if fixture else None,
+        fixture_difficulty=fixture.difficulty if fixture else None,
+        chance_of_playing=fixture.chance_of_playing if fixture else 1.0,
     )
 
 
@@ -158,4 +166,22 @@ def get_similar_players(
         results = find_similar_players(
             vectors, player_id, k=top, same_position_only=not any_position
         )
-    return [schemas.SimilarPlayerOut.model_validate(r) for r in results]
+
+    teams_by_player_id = {
+        p.id: p.team.short_name
+        for p in session.query(Player)
+        .options(selectinload(Player.team))
+        .filter(Player.id.in_([r.player_id for r in results]))
+        .all()
+    }
+    return [
+        schemas.SimilarPlayerOut(
+            player_id=r.player_id,
+            web_name=r.web_name,
+            team_id=r.team_id,
+            team_short_name=teams_by_player_id.get(r.player_id, ""),
+            now_cost=r.now_cost,
+            similarity=r.similarity,
+        )
+        for r in results
+    ]

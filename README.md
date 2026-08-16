@@ -17,15 +17,17 @@ Free VM at `https://fplquant.duckdns.org` (see [`DEPLOYMENT.md`](DEPLOYMENT.md))
 
 ## Screenshots
 
-Squad optimizer, player explorer, and the market ticker (light + dark).
+Squad optimizer, player explorer, and the market view — the "Nocturne" quant-terminal
+redesign, dark by default with a light-mode variant. Player positions in the
+optimizer's starting-XI pitch view are jersey icons colored by each club's real kit.
 **Demo data** — the 2026/27 season hasn't started yet, so these are
 seeded with synthetic gameweek history on top of real FPL player/team data,
 not live results.
 
 <img src="docs/screenshots/optimizer.png" alt="Squad optimizer" width="720" />
 <img src="docs/screenshots/explorer.png" alt="Player explorer" width="720" />
-<img src="docs/screenshots/ticker.png" alt="Market ticker" width="720" />
-<img src="docs/screenshots/ticker_dark.png" alt="Market ticker, dark mode" width="720" />
+<img src="docs/screenshots/ticker.png" alt="Market view" width="720" />
+<img src="docs/screenshots/ticker_dark.png" alt="Market view, light mode" width="720" />
 
 ## Architecture (current)
 
@@ -83,12 +85,23 @@ logging a warning) if Redis is unreachable rather than ever failing a request.
 
 ```
 frontend/ (static, no build step — no Node/npm involved)
-  index.html   ── 4 tabs: Optimizer, Player Explorer, Market Ticker, Transfers
+  index.html   ── 4 tabs: Optimizer, Explorer, Market, Transfers, plus a
+                  persistent header (nav, live deadline countdown, price/
+                  ownership ticker tape) and a squad-summary hero
   config.js    ── API_BASE: same-origin locally, the backend's URL once deployed
   api.js       ── fetch wrapper over the endpoints above
-  components.js ── stat tile, sparkline (SVG), risk badge, data table, fixture-context meta line
+  kits.js      ── real home-kit colors per club, for the jersey icons
+  components.js ── jersey icon (SVG), donut gauge, fixture-context meta line
   optimizer.js / explorer.js / ticker.js / transfers.js / main.js
 ```
+
+The design — "Nocturne", a dark-first quant-terminal aesthetic — was built in
+Claude's design tool and imported via the `claude_design` MCP, then
+implemented against the real API (not the mock data the design tool preview
+used). The starting-XI pitch view positions players by formation row with
+jersey icons in each club's real kit colors; the header's ticker tape and
+deadline countdown are driven by `/market/momentum` and the new
+`/meta/next-deadline` endpoint.
 
 ### Fixture-adjusted predictions & transfer planner
 

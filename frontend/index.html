@@ -4,225 +4,385 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FPL Quant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="app-header">
-    <div class="app-header__title">
-      <span class="app-header__mark">FPL</span> Quant
-    </div>
-    <nav class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab active" data-tab="optimizer" role="tab" aria-selected="true">Optimizer</button>
-      <button class="tab" data-tab="explorer" role="tab" aria-selected="false">Player Explorer</button>
-      <button class="tab" data-tab="ticker" role="tab" aria-selected="false">Market Ticker</button>
-      <button class="tab" data-tab="transfers" role="tab" aria-selected="false">Transfers</button>
-    </nav>
-    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">◐</button>
-  </header>
+  <div class="fq-header">
+    <div class="fq-header__bar">
+      <div class="fq-logo">
+        <span class="fq-logo__mark">FPL</span>
+        <span class="fq-logo__name">Quant</span>
+        <span class="fq-pulse-dot"></span>
+        <span class="fq-feed-label" id="feed-label">demo data</span>
+      </div>
 
-  <main class="app-main">
+      <nav class="fq-nav" role="tablist" aria-label="Sections">
+        <div class="fq-nav__slider" id="nav-slider"></div>
+        <button class="fq-nav__btn active" data-tab="optimizer" role="tab" aria-selected="true">Optimizer</button>
+        <button class="fq-nav__btn" data-tab="explorer" role="tab" aria-selected="false">Explorer</button>
+        <button class="fq-nav__btn" data-tab="ticker" role="tab" aria-selected="false">Market</button>
+        <button class="fq-nav__btn" data-tab="transfers" role="tab" aria-selected="false">Transfers</button>
+      </nav>
+
+      <button class="fq-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"></circle><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor" stroke="none"></path></svg>
+      </button>
+    </div>
+
+    <div class="fq-tape-row">
+      <div class="fq-tape-deadline">
+        <span class="fq-tape-deadline__label">Deadline</span>
+        <span class="fq-tape-deadline__value" id="deadline-value">—</span>
+      </div>
+      <div class="fq-tape-viewport">
+        <div class="fq-tape-track" id="tape-track"></div>
+        <div class="fq-tape-fade"></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="fq-hero">
+    <div>
+      <div class="fq-hero__kicker">Fantasy Premier League · portfolio theory</div>
+      <h1 class="fq-hero__title">Pick your squad the way a fund picks stocks.</h1>
+      <p class="fq-hero__sub">Every player is priced, scored and risk-checked against their actual next fixture. Set how much risk you're happy with and we'll build the fifteen that make the most of it.</p>
+    </div>
+    <div class="fq-hero__stats">
+      <div class="fq-hero__stat">
+        <div class="fq-hero__stat-label">Squad value</div>
+        <div class="fq-hero__stat-value" id="hero-value">—</div>
+      </div>
+      <div class="fq-hero__stat">
+        <div class="fq-hero__stat-label">XI points</div>
+        <div class="fq-hero__stat-value fq-hero__stat-value--accent" id="hero-points">—</div>
+      </div>
+      <div class="fq-hero__stat">
+        <div class="fq-hero__stat-label">Captain</div>
+        <div class="fq-hero__stat-value" id="hero-captain">—</div>
+      </div>
+    </div>
+  </section>
+
+  <main class="fq-main">
     <!-- ===================== OPTIMIZER ===================== -->
     <section class="panel active" id="panel-optimizer" role="tabpanel">
-      <form class="card optimizer-form" id="optimizer-form">
-        <div class="field">
-          <label for="budget">Budget (£m)</label>
-          <input type="number" id="budget" name="budget" value="100.0" step="0.1" min="0.1" />
-        </div>
-        <div class="field">
-          <label for="max-per-club">Max per club</label>
-          <select id="max-per-club" name="max_per_club">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3" selected>3</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="formation">Formation</label>
-          <select id="formation" name="formation" required>
-            <option value="" disabled selected hidden>Choose a formation…</option>
-            <option value="auto">Auto (best-scoring)</option>
-            <option value="3-4-3">3-4-3</option>
-            <option value="3-5-2">3-5-2</option>
-            <option value="4-3-3">4-3-3</option>
-            <option value="4-4-2">4-4-2</option>
-            <option value="4-5-1">4-5-1</option>
-            <option value="5-2-3">5-2-3</option>
-            <option value="5-3-2">5-3-2</option>
-            <option value="5-4-1">5-4-1</option>
-          </select>
-        </div>
-        <div class="field field--checkbox">
-          <label for="risk-adjusted">
-            <input type="checkbox" id="risk-adjusted" name="risk_adjusted" />
-            Risk-adjusted
-          </label>
-        </div>
-        <div class="field risk-params" id="risk-params" hidden>
-          <div class="slider-field">
-            <label for="risk-aversion">How risky should your picks be?</label>
-            <div class="slider-row">
-              <span class="slider-row__end">Very risky</span>
-              <input type="range" id="risk-aversion" name="risk_aversion" value="1.0" min="0" max="5" step="0.25" />
-              <span class="slider-row__end">Play it safe</span>
+      <div class="fq-layout-sidebar">
+        <form class="fq-sidebar" id="optimizer-form">
+          <div class="fq-sidebar__kicker">Build a squad</div>
+          <div class="fq-sidebar__body">
+            <div class="fq-field">
+              <span class="fq-field__label">Budget</span>
+              <div class="fq-money-input">
+                <span>£</span>
+                <input type="number" id="budget" name="budget" value="100.0" step="0.1" min="50" max="120" />
+                <span>m</span>
+              </div>
+            </div>
+
+            <div class="fq-field-row">
+              <label class="fq-field">
+                <span class="fq-field__label">Max per club</span>
+                <select class="fq-select" id="max-per-club" name="max_per_club">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3" selected>3</option>
+                </select>
+              </label>
+              <label class="fq-field">
+                <span class="fq-field__label">Formation</span>
+                <select class="fq-select" id="formation" name="formation">
+                  <option value="auto" selected>Auto</option>
+                  <option value="3-4-3">3-4-3</option>
+                  <option value="3-5-2">3-5-2</option>
+                  <option value="4-3-3">4-3-3</option>
+                  <option value="4-4-2">4-4-2</option>
+                  <option value="4-5-1">4-5-1</option>
+                  <option value="5-2-3">5-2-3</option>
+                  <option value="5-3-2">5-3-2</option>
+                  <option value="5-4-1">5-4-1</option>
+                </select>
+              </label>
+            </div>
+
+            <button type="button" class="fq-switch-row" id="risk-toggle">
+              <span>Weigh up the risk</span>
+              <span class="fq-switch" id="risk-switch"><span class="fq-switch__knob"></span></span>
+            </button>
+
+            <div class="fq-collapse" id="risk-collapse">
+              <div class="fq-collapse__inner">
+                <div class="fq-collapse__body">
+                  <div class="fq-slider-block">
+                    <div class="fq-slider-head">
+                      <span class="fq-slider-head__label">How bold should the picks be?</span>
+                      <span class="fq-slider-head__value" id="risk-aversion-label">Balanced</span>
+                    </div>
+                    <div class="fq-slider-track-wrap">
+                      <div class="fq-slider-track fq-slider-track--warm"></div>
+                      <div class="fq-slider-thumb" id="risk-aversion-thumb"></div>
+                      <input class="fq-slider-input" type="range" id="risk-aversion" name="risk_aversion" min="0" max="5" step="0.25" value="1.5" />
+                    </div>
+                    <div class="fq-slider-ends"><span>Swing for it</span><span>Play it safe</span></div>
+                  </div>
+
+                  <div class="fq-slider-block">
+                    <div class="fq-slider-head">
+                      <span class="fq-slider-head__label">How much do injuries worry you?</span>
+                      <span class="fq-slider-head__value" id="injury-weight-label">Sensible</span>
+                    </div>
+                    <div class="fq-slider-track-wrap">
+                      <div class="fq-slider-track fq-slider-track--cool"></div>
+                      <div class="fq-slider-thumb" id="injury-weight-thumb"></div>
+                      <input class="fq-slider-input" type="range" id="injury-weight" name="injury_weight" min="0" max="2" step="0.1" value="1.0" />
+                    </div>
+                    <div class="fq-slider-ends"><span>Not fussed</span><span>Very careful</span></div>
+                  </div>
+
+                  <div class="fq-mini-chart-card">
+                    <div class="fq-mini-chart-card__kicker">Risk vs reward</div>
+                    <svg viewBox="0 0 260 96" width="100%" height="96" style="display: block; overflow: visible">
+                      <path d="M0 95 H260" stroke="var(--fq-line)" stroke-width="1"></path>
+                      <path id="risk-curve-fill" fill="var(--fq-accent-soft)" style="transition: d 420ms cubic-bezier(.16,1,.3,1)"></path>
+                      <path id="risk-curve-path" fill="none" stroke="var(--fq-accent)" stroke-width="2" stroke-linecap="round" style="transition: d 420ms cubic-bezier(.16,1,.3,1)"></path>
+                      <circle id="risk-curve-dot" r="4.5" fill="var(--fq-accent-hi)" stroke="var(--fq-surf-2)" stroke-width="2" style="transition: cx 300ms ease, cy 300ms ease"></circle>
+                    </svg>
+                    <div class="fq-mini-chart-card__legend"><span>Volatility</span><span>Expected points</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="fq-btn-primary" id="build-btn">
+              <span class="fq-btn-primary__label" id="build-label">Build my squad</span>
+            </button>
+          </div>
+        </form>
+
+        <div>
+          <div id="optimizer-status" class="status" aria-live="polite"></div>
+
+          <div id="optimizer-results" hidden>
+            <div class="fq-kpi-grid" id="optimizer-kpis"></div>
+
+            <div class="fq-pitch">
+              <div class="fq-pitch__lines">
+                <svg viewBox="0 0 100 130" preserveAspectRatio="none" width="100%" height="100%" style="display: block">
+                  <rect x="3" y="3" width="94" height="124" fill="none" stroke="var(--fq-pitch-line)" stroke-width="0.35"></rect>
+                  <rect x="26" y="3" width="48" height="20" fill="none" stroke="var(--fq-pitch-line)" stroke-width="0.35"></rect>
+                  <rect x="26" y="107" width="48" height="20" fill="none" stroke="var(--fq-pitch-line)" stroke-width="0.35"></rect>
+                  <circle cx="50" cy="65" r="15" fill="none" stroke="var(--fq-pitch-line)" stroke-width="0.35"></circle>
+                  <path d="M3 65 H97" stroke="var(--fq-pitch-line)" stroke-width="0.35"></path>
+                </svg>
+              </div>
+              <div class="fq-pitch__glow"></div>
+
+              <div class="fq-pitch__head">
+                <div class="fq-pitch__head-kicker" id="pitch-formation-label">Starting XI</div>
+                <div class="fq-pitch__head-chips" id="pitch-chips"></div>
+              </div>
+
+              <div class="fq-pitch__body" id="pitch-body"></div>
+
+              <div class="fq-dugout">
+                <div class="fq-dugout__kicker">Dugout</div>
+                <div class="fq-dugout__row" id="dugout-row"></div>
+              </div>
             </div>
           </div>
-          <div class="slider-field">
-            <label for="injury-weight">How worried about injuries?</label>
-            <div class="slider-row">
-              <span class="slider-row__end">Not worried</span>
-              <input type="range" id="injury-weight" name="injury_weight" value="1.0" min="0" max="2" step="0.1" />
-              <span class="slider-row__end">Very worried</span>
-            </div>
-          </div>
         </div>
-        <button type="submit" class="btn btn--primary">Build squad</button>
-      </form>
-
-      <div id="optimizer-status" class="status" aria-live="polite"></div>
-
-      <div id="optimizer-results" class="optimizer-results" hidden>
-        <div class="kpi-row" id="optimizer-kpis"></div>
-        <div id="optimizer-chips" class="chip-values"></div>
-        <h3>Starting XI</h3>
-        <div id="optimizer-squad" class="squad-grid"></div>
-        <h3>Bench</h3>
-        <div id="optimizer-bench" class="squad-grid"></div>
       </div>
     </section>
 
     <!-- ===================== PLAYER EXPLORER ===================== -->
     <section class="panel" id="panel-explorer" role="tabpanel">
-      <div class="card explorer-search">
-        <label for="player-search">Search a player</label>
-        <input type="search" id="player-search" placeholder="e.g. Haaland" autocomplete="off" />
-        <ul class="search-results" id="search-results" hidden></ul>
+      <div class="fq-player-card">
+        <div class="fq-player-avatar" id="player-avatar">?</div>
+        <div class="fq-player-info">
+          <div class="fq-player-name" id="player-name">Search for a player</div>
+          <div class="fq-player-meta" id="player-meta">Their form, injury risk, and similar players will show up here.</div>
+        </div>
+        <div class="fq-search-wrap">
+          <input class="fq-search-input" type="search" id="player-search" placeholder="Search a player" autocomplete="off" />
+          <div class="fq-search-panel" id="search-results" hidden></div>
+        </div>
+      </div>
+
+      <div id="explorer-detail" hidden>
+        <div class="fq-layout-explorer">
+          <div>
+            <div class="fq-card">
+              <div class="fq-card__head">
+                <span class="fq-card__kicker">Points by gameweek</span>
+                <span class="fq-card__note" id="trend-summary"></span>
+              </div>
+              <div id="trend-chart"></div>
+            </div>
+
+            <div>
+              <div class="fq-section-kicker">Plays a similar game</div>
+              <div class="fq-similar-grid" id="similar-grid"></div>
+            </div>
+          </div>
+
+          <div class="fq-sidebar-stack">
+            <div class="fq-gauge-card">
+              <div class="fq-card__kicker" style="margin-bottom: 14px">Injury risk</div>
+              <div id="risk-gauge"></div>
+              <div class="fq-gauge-word" id="gauge-word"></div>
+              <div class="fq-gauge-breakdown" id="gauge-breakdown"></div>
+            </div>
+
+            <div class="fq-fixture-card">
+              <div class="fq-card__kicker" style="margin-bottom: 12px">Next fixture</div>
+              <div class="fq-fixture-value" id="fixture-value">—</div>
+              <div class="fq-fixture-note" id="fixture-note"></div>
+              <div class="fq-fdr-scale" id="fdr-scale"></div>
+              <div class="fq-fdr-legend"><span>Kind</span><span>Brutal</span></div>
+            </div>
+
+            <div class="fq-fixture-card">
+              <div class="fq-card__kicker" style="margin-bottom: 12px">Find alternatives</div>
+              <label class="fq-field--checkbox" style="display: flex"><input type="checkbox" id="cheaper-only" /> Cheaper only</label>
+              <label class="fq-field--checkbox" style="display: flex; margin-top: 8px"><input type="checkbox" id="any-position" /> Any position</label>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="explorer-empty" class="empty-state">
         <p>Search for a player to see their form trend, injury risk, and similar players.</p>
       </div>
-
-      <div id="explorer-detail" class="explorer-detail" hidden>
-        <div class="card player-header" id="player-header"></div>
-
-        <div class="detail-grid">
-          <div class="card">
-            <h3>Form trend</h3>
-            <div id="form-trend"></div>
-          </div>
-          <div class="card">
-            <h3>Injury risk</h3>
-            <div id="injury-risk"></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>Similar players</h3>
-          <div class="similar-controls">
-            <label><input type="checkbox" id="cheaper-only" /> Cheaper only</label>
-            <label><input type="checkbox" id="any-position" /> Any position</label>
-          </div>
-          <div id="similar-players"></div>
-        </div>
-      </div>
     </section>
 
-    <!-- ===================== MARKET TICKER ===================== -->
+    <!-- ===================== MARKET ===================== -->
     <section class="panel" id="panel-ticker" role="tabpanel">
-      <div class="card ticker-controls">
-        <label for="ticker-lookback">Lookback (gameweeks)</label>
-        <input type="number" id="ticker-lookback" value="5" min="1" step="1" />
-        <button type="button" class="btn" id="ticker-refresh">Refresh</button>
+      <div class="fq-market-head">
+        <div>
+          <div class="fq-market-head__kicker">Market</div>
+          <div class="fq-market-head__sub">Who's being bought and sold, over the last <span id="lookback-label">5</span> gameweeks.</div>
+        </div>
+        <div class="fq-seg" id="lookback-seg">
+          <button type="button" class="fq-seg__btn" data-lookback="3">3 GW</button>
+          <button type="button" class="fq-seg__btn active" data-lookback="5">5 GW</button>
+          <button type="button" class="fq-seg__btn" data-lookback="10">10 GW</button>
+        </div>
       </div>
       <div id="ticker-empty" class="empty-state" hidden>
-        <p>No gameweek data yet — the ticker populates once the season starts.</p>
+        <p>No gameweek data yet — the market view populates once the season starts.</p>
       </div>
-      <div class="ticker-strip" id="ticker-strip"></div>
+      <div class="fq-market-grid" id="ticker-strip"></div>
     </section>
 
     <!-- ===================== TRANSFERS ===================== -->
     <section class="panel" id="panel-transfers" role="tabpanel">
-      <form class="card optimizer-form" id="transfers-form">
-        <div class="field">
-          <label for="fpl-team-id">Your FPL team ID</label>
-          <input type="number" id="fpl-team-id" name="fpl_team_id" min="1" step="1" placeholder="e.g. 1234567" required />
-        </div>
-        <div class="field">
-          <label for="free-transfers">Free transfers</label>
-          <select id="free-transfers" name="free_transfers">
-            <option value="0">0</option>
-            <option value="1" selected>1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="transfer-chip">Chip this week</label>
-          <select id="transfer-chip" name="chip">
-            <option value="none" selected>None</option>
-            <option value="wildcard">Wildcard</option>
-            <option value="free_hit">Free Hit</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="transfer-max-per-club">Max per club</label>
-          <select id="transfer-max-per-club" name="max_per_club">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3" selected>3</option>
-          </select>
-        </div>
-        <div class="field field--checkbox">
-          <label for="transfer-risk-adjusted">
-            <input type="checkbox" id="transfer-risk-adjusted" name="risk_adjusted" />
-            Risk-adjusted
-          </label>
-        </div>
-        <div class="field risk-params" id="transfer-risk-params" hidden>
-          <div class="slider-field">
-            <label for="transfer-risk-aversion">How risky should your picks be?</label>
-            <div class="slider-row">
-              <span class="slider-row__end">Very risky</span>
-              <input type="range" id="transfer-risk-aversion" name="risk_aversion" value="1.0" min="0" max="5" step="0.25" />
-              <span class="slider-row__end">Play it safe</span>
+      <div class="fq-layout-sidebar">
+        <form class="fq-sidebar" id="transfers-form">
+          <div class="fq-sidebar__kicker">Plan your week</div>
+          <div class="fq-sidebar__body">
+            <label class="fq-field">
+              <span class="fq-field__label">Your FPL team ID</span>
+              <input class="fq-text-input" type="number" id="fpl-team-id" name="fpl_team_id" min="1" step="1" placeholder="e.g. 1234567" required />
+            </label>
+            <div class="fq-field-row">
+              <label class="fq-field">
+                <span class="fq-field__label">Free transfers</span>
+                <select class="fq-select" id="free-transfers" name="free_transfers">
+                  <option value="0">0</option>
+                  <option value="1" selected>1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </label>
+              <label class="fq-field">
+                <span class="fq-field__label">Chip</span>
+                <select class="fq-select" id="transfer-chip" name="chip">
+                  <option value="none" selected>None</option>
+                  <option value="wildcard">Wildcard</option>
+                  <option value="free_hit">Free Hit</option>
+                </select>
+              </label>
             </div>
-          </div>
-          <div class="slider-field">
-            <label for="transfer-injury-weight">How worried about injuries?</label>
-            <div class="slider-row">
-              <span class="slider-row__end">Not worried</span>
-              <input type="range" id="transfer-injury-weight" name="injury_weight" value="1.0" min="0" max="2" step="0.1" />
-              <span class="slider-row__end">Very worried</span>
+            <label class="fq-field">
+              <span class="fq-field__label">Max per club</span>
+              <select class="fq-select" id="transfer-max-per-club" name="max_per_club">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+              </select>
+            </label>
+
+            <button type="button" class="fq-switch-row" id="transfer-risk-toggle">
+              <span>Weigh up the risk</span>
+              <span class="fq-switch" id="transfer-risk-switch"><span class="fq-switch__knob"></span></span>
+            </button>
+            <div class="fq-collapse" id="transfer-risk-collapse">
+              <div class="fq-collapse__inner">
+                <div class="fq-collapse__body">
+                  <div class="fq-slider-block">
+                    <div class="fq-slider-head">
+                      <span class="fq-slider-head__label">How risky should your picks be?</span>
+                      <span class="fq-slider-head__value" id="transfer-risk-aversion-label">Balanced</span>
+                    </div>
+                    <div class="fq-slider-track-wrap">
+                      <div class="fq-slider-track fq-slider-track--warm"></div>
+                      <div class="fq-slider-thumb" id="transfer-risk-aversion-thumb"></div>
+                      <input class="fq-slider-input" type="range" id="transfer-risk-aversion" name="risk_aversion" min="0" max="5" step="0.25" value="1.5" />
+                    </div>
+                    <div class="fq-slider-ends"><span>Swing for it</span><span>Play it safe</span></div>
+                  </div>
+                  <div class="fq-slider-block">
+                    <div class="fq-slider-head">
+                      <span class="fq-slider-head__label">How much do injuries worry you?</span>
+                      <span class="fq-slider-head__value" id="transfer-injury-weight-label">Sensible</span>
+                    </div>
+                    <div class="fq-slider-track-wrap">
+                      <div class="fq-slider-track fq-slider-track--cool"></div>
+                      <div class="fq-slider-thumb" id="transfer-injury-weight-thumb"></div>
+                      <input class="fq-slider-input" type="range" id="transfer-injury-weight" name="injury_weight" min="0" max="2" step="0.1" value="1.0" />
+                    </div>
+                    <div class="fq-slider-ends"><span>Not fussed</span><span>Very careful</span></div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <button type="submit" class="fq-btn-primary" id="plan-btn">
+              <span class="fq-btn-primary__label" id="plan-label">Plan my transfers</span>
+            </button>
+            <div class="fq-hint">A transfer only shows up here if it earns back more than the four points it costs.</div>
+          </div>
+        </form>
+
+        <div>
+          <div id="transfers-status" class="status" aria-live="polite"></div>
+
+          <div id="transfers-results" hidden>
+            <div class="fq-verdict" id="transfers-verdict"></div>
+            <div class="fq-transfer-list" id="transfers-pairs"></div>
+            <div class="fq-kpi-grid" id="transfers-kpis"></div>
+
+            <div class="fq-section-kicker" style="margin-top: 22px">Current squad</div>
+            <div class="fq-dugout__row" id="transfers-current-squad" style="flex-wrap: wrap; margin-bottom: 20px"></div>
           </div>
         </div>
-        <button type="submit" class="btn btn--primary">Plan transfers</button>
-      </form>
-
-      <div id="transfers-status" class="status" aria-live="polite"></div>
-
-      <div id="transfers-results" class="optimizer-results" hidden>
-        <div class="kpi-row" id="transfers-kpis"></div>
-        <div id="transfers-verdict" class="transfer-verdict"></div>
-
-        <h3>Recommended transfers</h3>
-        <div id="transfers-pairs" class="transfer-pairs"></div>
-
-        <h3>Current squad</h3>
-        <div id="transfers-current-squad" class="squad-grid"></div>
-
-        <h3>Resulting starting XI</h3>
-        <div id="transfers-squad" class="squad-grid"></div>
-        <h3>Bench</h3>
-        <div id="transfers-bench" class="squad-grid"></div>
       </div>
     </section>
   </main>
 
+  <footer class="fq-footer">
+    <div class="fq-footer__bar">
+      <span>FPL Quant · demo data while the season warms up</span>
+      <span id="feed-note">Backend asleep — showing seeded numbers</span>
+    </div>
+  </footer>
+
   <script type="module" src="api.js"></script>
   <script type="module" src="components.js"></script>
+  <script type="module" src="kits.js"></script>
   <script type="module" src="optimizer.js"></script>
   <script type="module" src="transfers.js"></script>
   <script type="module" src="explorer.js"></script>

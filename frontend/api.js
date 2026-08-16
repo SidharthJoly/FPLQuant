@@ -41,4 +41,5 @@ export const api = {
     request("/optimize", { method: "POST", body: JSON.stringify(payload) }),
   planTransfers: (payload) =>
     request("/transfers/plan", { method: "POST", body: JSON.stringify(payload) }),
+  getNextDeadline: () => request("/meta/next-deadline"),
 };

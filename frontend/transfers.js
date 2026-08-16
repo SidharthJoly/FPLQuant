@@ -1,29 +1,65 @@
 import { api } from "./api.js";
-import { statTile, clear, playerMetaLine } from "./components.js";
-
-const POSITION_NAMES = { 1: "GKP", 2: "DEF", 3: "MID", 4: "FWD" };
-const POSITION_ORDER = [1, 2, 3, 4];
+import { clear, jerseyIcon, playerMetaLine } from "./components.js";
+import { kitFor } from "./kits.js";
 
 const form = document.getElementById("transfers-form");
-const riskCheckbox = document.getElementById("transfer-risk-adjusted");
-const riskParams = document.getElementById("transfer-risk-params");
+const riskToggle = document.getElementById("transfer-risk-toggle");
+const riskSwitch = document.getElementById("transfer-risk-switch");
+const riskCollapse = document.getElementById("transfer-risk-collapse");
+const riskAversionInput = document.getElementById("transfer-risk-aversion");
+const riskAversionThumb = document.getElementById("transfer-risk-aversion-thumb");
+const riskAversionLabel = document.getElementById("transfer-risk-aversion-label");
+const injuryWeightInput = document.getElementById("transfer-injury-weight");
+const injuryWeightThumb = document.getElementById("transfer-injury-weight-thumb");
+const injuryWeightLabel = document.getElementById("transfer-injury-weight-label");
+const planBtn = document.getElementById("plan-btn");
+const planLabel = document.getElementById("plan-label");
 const statusEl = document.getElementById("transfers-status");
 const resultsEl = document.getElementById("transfers-results");
 const kpisEl = document.getElementById("transfers-kpis");
 const verdictEl = document.getElementById("transfers-verdict");
 const pairsEl = document.getElementById("transfers-pairs");
 const currentSquadEl = document.getElementById("transfers-current-squad");
-const squadEl = document.getElementById("transfers-squad");
-const benchEl = document.getElementById("transfers-bench");
 
-riskCheckbox.addEventListener("change", () => {
-  riskParams.hidden = !riskCheckbox.checked;
+let riskOn = false;
+
+riskToggle.addEventListener("click", () => {
+  riskOn = !riskOn;
+  riskSwitch.classList.toggle("on", riskOn);
+  riskCollapse.classList.toggle("open", riskOn);
 });
+
+function aversionLabelFor(v) {
+  if (v < 1) return "Bold";
+  if (v < 2.5) return "Balanced";
+  if (v < 4) return "Careful";
+  return "Safe";
+}
+function injuryLabelFor(v) {
+  if (v < 0.5) return "Relaxed";
+  if (v < 1.3) return "Sensible";
+  return "Cautious";
+}
+
+riskAversionInput.addEventListener("input", () => {
+  const v = Number(riskAversionInput.value);
+  riskAversionThumb.style.left = `${(v / 5) * 100}%`;
+  riskAversionLabel.textContent = aversionLabelFor(v);
+});
+injuryWeightInput.addEventListener("input", () => {
+  const v = Number(injuryWeightInput.value);
+  injuryWeightThumb.style.left = `${(v / 2) * 100}%`;
+  injuryWeightLabel.textContent = injuryLabelFor(v);
+});
+riskAversionInput.dispatchEvent(new Event("input"));
+injuryWeightInput.dispatchEvent(new Event("input"));
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   statusEl.textContent = "Planning transfers…";
   statusEl.classList.remove("error");
+  planBtn.classList.add("solving");
+  planLabel.textContent = "Planning…";
   resultsEl.hidden = true;
 
   const payload = {
@@ -31,9 +67,9 @@ form.addEventListener("submit", async (event) => {
     free_transfers: Number(form.free_transfers.value),
     chip: form.chip.value,
     max_per_club: Number(form.max_per_club.value),
-    risk_adjusted: riskCheckbox.checked,
-    risk_aversion: Number(form.risk_aversion.value),
-    injury_weight: Number(form.injury_weight.value),
+    risk_adjusted: riskOn,
+    risk_aversion: Number(riskAversionInput.value),
+    injury_weight: Number(injuryWeightInput.value),
   };
 
   try {
@@ -43,6 +79,9 @@ form.addEventListener("submit", async (event) => {
   } catch (err) {
     statusEl.textContent = `Could not plan transfers: ${err.message}`;
     statusEl.classList.add("error");
+  } finally {
+    planBtn.classList.remove("solving");
+    planLabel.textContent = "Plan my transfers";
   }
 });
 
@@ -50,37 +89,42 @@ function renderResult(result) {
   clear(kpisEl);
   clear(pairsEl);
   clear(currentSquadEl);
-  clear(squadEl);
-  clear(benchEl);
 
-  kpisEl.appendChild(statTile({ label: "Team", value: result.team_name }));
-  kpisEl.appendChild(statTile({ label: "Bank", value: `£${(result.bank / 10).toFixed(1)}m` }));
-  kpisEl.appendChild(statTile({ label: "Free transfers", value: String(result.free_transfers) }));
+  kpisEl.appendChild(kpi("Team", result.team_name));
+  kpisEl.appendChild(kpi("In the bank", `£${(result.bank / 10).toFixed(1)}m`));
   kpisEl.appendChild(
-    statTile({
-      label: "Hit cost",
-      value: result.hit_cost > 0 ? `-${result.hit_cost} pts` : "None",
-      delta: result.transfers_made > 0 ? `+${result.points_gain_after_hit.toFixed(1)} pts net` : null,
-      deltaGood: result.points_gain_after_hit >= 0,
-    })
+    kpi("Hit", result.hit_cost ? `−${result.hit_cost} pts` : "None", result.hit_cost ? "var(--fq-down)" : "var(--fq-dim)")
   );
+  kpisEl.appendChild(kpi("Net gain", `+${result.points_gain_after_hit.toFixed(1)} pts`, "var(--fq-up)"));
 
   renderVerdict(result);
   renderPairs(result.transfers);
-  renderPlayerGroup(currentSquadEl, result.current_squad, null);
-  renderPlayerGroup(squadEl, result.starting_xi.starters, result.starting_xi);
-  renderPlayerGroup(benchEl, result.starting_xi.bench, result.starting_xi);
+  renderCurrentSquad(result.current_squad);
 
   resultsEl.hidden = false;
 }
 
+function kpi(label, value, color) {
+  const el = document.createElement("div");
+  el.className = "fq-kpi";
+  const labelEl = document.createElement("div");
+  labelEl.className = "fq-kpi__label";
+  labelEl.textContent = label;
+  const valueEl = document.createElement("div");
+  valueEl.className = "fq-kpi__value";
+  valueEl.textContent = value;
+  if (color) valueEl.style.color = color;
+  el.appendChild(labelEl);
+  el.appendChild(valueEl);
+  return el;
+}
+
 function renderVerdict(result) {
-  clear(verdictEl);
-  verdictEl.classList.remove("transfer-verdict--positive", "transfer-verdict--neutral");
+  verdictEl.classList.remove("fq-verdict--positive", "fq-verdict--neutral");
 
   if (result.transfers_made === 0) {
     verdictEl.textContent = "No transfers recommended this week — your squad is already well positioned.";
-    verdictEl.classList.add("transfer-verdict--neutral");
+    verdictEl.classList.add("fq-verdict--neutral");
     return;
   }
 
@@ -94,86 +138,92 @@ function renderVerdict(result) {
   verdictEl.textContent =
     `Recommended: ${result.transfers_made} transfer${result.transfers_made === 1 ? "" : "s"} ` +
     `${chipNote} — a net gain of +${result.points_gain_after_hit.toFixed(1)} points for the next match.`;
-  verdictEl.classList.add("transfer-verdict--positive");
+  verdictEl.classList.add("fq-verdict--positive");
 }
 
 function renderPairs(transfers) {
-  if (transfers.length === 0) return;
   for (const pair of transfers) {
     const row = document.createElement("div");
-    row.className = "transfer-pair";
+    row.className = "fq-transfer-row";
 
-    row.appendChild(transferSide("OUT", "transfer-pair__out", pair.out));
-    const arrow = document.createElement("span");
-    arrow.className = "transfer-pair__arrow";
-    arrow.textContent = "→";
+    row.appendChild(transferSide("OUT", "fq-transfer-tag--out", pair.out));
+    const arrow = document.createElement("div");
+    arrow.className = "fq-transfer-arrow";
+    arrow.appendChild(arrowIcon());
     row.appendChild(arrow);
-    row.appendChild(transferSide("IN", "transfer-pair__in", pair.player_in));
+    row.appendChild(transferSide("IN", "fq-transfer-tag--in", pair.player_in, true));
 
     pairsEl.appendChild(row);
   }
 }
 
-function transferSide(labelText, className, player) {
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function arrowIcon() {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("width", "20");
+  svg.setAttribute("height", "20");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "1.6");
+  const path = document.createElementNS(SVG_NS, "path");
+  path.setAttribute("d", "M4 12h15M13 6l6 6-6 6");
+  svg.appendChild(path);
+  return svg;
+}
+
+function transferSide(labelText, tagClass, player, alignEnd = false) {
   const side = document.createElement("div");
-  side.className = `transfer-pair__side ${className}`;
+  side.className = alignEnd ? "fq-transfer-side fq-transfer-side--in" : "fq-transfer-side";
 
-  const label = document.createElement("span");
-  label.className = "transfer-pair__label";
-  label.textContent = labelText;
-  side.appendChild(label);
+  const tag = document.createElement("span");
+  tag.className = `fq-transfer-tag ${tagClass}`;
+  tag.textContent = labelText;
 
-  side.appendChild(document.createTextNode(` ${player.web_name} (${player.team_short_name})`));
+  const info = document.createElement("div");
+  const name = document.createElement("div");
+  name.className = "fq-transfer-name";
+  name.textContent = player.web_name;
+  const meta = document.createElement("div");
+  meta.className = "fq-transfer-meta";
+  meta.textContent = playerMetaLine(player);
+  info.appendChild(name);
+  info.appendChild(meta);
+
+  if (alignEnd) {
+    side.appendChild(info);
+    side.appendChild(tag);
+  } else {
+    side.appendChild(tag);
+    side.appendChild(info);
+  }
   return side;
 }
 
-function renderPlayerGroup(container, players, xi) {
-  const byPosition = {};
+function renderCurrentSquad(players) {
   for (const player of players) {
-    (byPosition[player.element_type] ??= []).push(player);
+    const row = document.createElement("div");
+    row.className = "fq-bench-player";
+    row.style.flex = "0 1 220px";
+
+    const jerseyWrap = document.createElement("div");
+    jerseyWrap.className = "fq-bench-player__jersey";
+    jerseyWrap.appendChild(jerseyIcon(kitFor(player.team_short_name), 24));
+    row.appendChild(jerseyWrap);
+
+    const info = document.createElement("div");
+    info.style.minWidth = "0";
+    const name = document.createElement("div");
+    name.className = "fq-bench-player__name";
+    name.textContent = player.web_name;
+    const line = document.createElement("div");
+    line.className = "fq-bench-player__line";
+    line.textContent = playerMetaLine(player);
+    info.appendChild(name);
+    info.appendChild(line);
+    row.appendChild(info);
+
+    currentSquadEl.appendChild(row);
   }
-
-  for (const position of POSITION_ORDER) {
-    const positionPlayers = byPosition[position];
-    if (!positionPlayers) continue;
-    positionPlayers.sort((a, b) => b.predicted_points - a.predicted_points);
-
-    const card = document.createElement("div");
-    card.className = "squad-position";
-
-    const heading = document.createElement("h4");
-    heading.textContent = POSITION_NAMES[position];
-    card.appendChild(heading);
-
-    for (const player of positionPlayers) {
-      const row = document.createElement("div");
-      row.className = "squad-player";
-
-      const name = document.createElement("span");
-      name.className = "squad-player__name";
-      name.textContent = `${player.web_name} (${player.team_short_name})`;
-      if (xi && player.player_id === xi.captain.player_id) {
-        name.appendChild(badge("C"));
-      } else if (xi && player.player_id === xi.vice_captain.player_id) {
-        name.appendChild(badge("VC"));
-      }
-
-      const meta = document.createElement("span");
-      meta.className = "squad-player__meta";
-      meta.textContent = playerMetaLine(player);
-
-      row.appendChild(name);
-      row.appendChild(meta);
-      card.appendChild(row);
-    }
-
-    container.appendChild(card);
-  }
-}
-
-function badge(text) {
-  const el = document.createElement("span");
-  el.className = "captain-badge";
-  el.textContent = text;
-  return el;
 }

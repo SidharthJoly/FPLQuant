@@ -1,7 +1,9 @@
+import datetime as dt
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from fplquant.models.orm import Player, PlayerGameweekStat, Team
+from fplquant.models.orm import Fixture, Player, PlayerGameweekStat, Team
 
 
 def _team(session: Session, fpl_id: int = 1) -> Team:
@@ -253,6 +255,36 @@ def test_get_player_detail_includes_form_when_history_exists(
     assert body["form_score"]["points_form"] == 5.0
 
 
+def test_get_player_detail_includes_next_fixture_info(
+    db_session: Session, api_client: TestClient
+) -> None:
+    team = _team(db_session, fpl_id=1)
+    opponent = Team(fpl_id=2, name="Chelsea", short_name="CHE")
+    db_session.add(opponent)
+    db_session.flush()
+    player = _player(db_session, team, 1, "Home")
+    db_session.add(
+        Fixture(
+            fpl_id=1,
+            kickoff_time=dt.datetime(2026, 9, 1, tzinfo=dt.UTC),
+            finished=False,
+            team_h_id=team.id,
+            team_a_id=opponent.id,
+            team_h_difficulty=2,
+            team_a_difficulty=4,
+        )
+    )
+    db_session.commit()
+
+    response = api_client.get(f"/players/{player.id}")
+
+    body = response.json()
+    assert body["next_opponent"] == "CHE"
+    assert body["next_opponent_is_home"] is True
+    assert body["fixture_difficulty"] == 2
+    assert body["chance_of_playing"] == 1.0
+
+
 def test_get_player_history_404_when_missing(api_client: TestClient) -> None:
     response = api_client.get("/players/999/history")
     assert response.status_code == 404
@@ -287,6 +319,27 @@ def test_get_player_history_returns_gameweek_series(
 def test_get_similar_players_404_when_missing(api_client: TestClient) -> None:
     response = api_client.get("/players/999/similar")
     assert response.status_code == 404
+
+
+def test_get_similar_players_includes_team_short_name(
+    db_session: Session, api_client: TestClient
+) -> None:
+    team_a = _team(db_session, fpl_id=1)
+    team_b = Team(fpl_id=2, name="Chelsea", short_name="CHE")
+    db_session.add(team_b)
+    db_session.flush()
+    target = _player(db_session, team_a, 1, "Target", element_type=3)
+    other = _player(db_session, team_b, 2, "Other", element_type=3)
+    for player in (target, other):
+        db_session.add(PlayerGameweekStat(player_id=player.id, round=1, minutes=90, total_points=6))
+    db_session.commit()
+
+    response = api_client.get(f"/players/{target.id}/similar")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["team_short_name"] == "CHE"
 
 
 def test_get_similar_players_empty_without_gameweek_history(

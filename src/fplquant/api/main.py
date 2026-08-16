@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from fplquant.api.routers import form, market, optimizer, players, risk, transfers
+from fplquant.api.routers import form, market, meta, optimizer, players, risk, transfers
 from fplquant.config import REPO_ROOT, settings
 from fplquant.optimizer.types import InfeasibleSquadError
 
@@ -35,6 +35,7 @@ app.include_router(risk.router)
 app.include_router(market.router)
 app.include_router(optimizer.router)
 app.include_router(transfers.router)
+app.include_router(meta.router)
 
 
 @app.get("/health", tags=["health"])

@@ -18,4 +18,13 @@ jobs:
             cd FPLQuant
             git pull origin main
             docker compose up -d --build
-            docker compose exec -T api uv run alembic upgrade head
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:8000/health > /dev/null; then
+                echo "API is healthy"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "API did not become healthy within 60s" >&2
+            docker compose logs --tail=50 api
+            exit 1

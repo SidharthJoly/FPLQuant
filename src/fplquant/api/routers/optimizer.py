@@ -59,8 +59,13 @@ def optimize(
     else:
         candidates = build_candidates_from_db(session)
 
+    forced_formation: tuple[int, int, int] | None = None
+    if request.formation is not None:
+        d, m, f = (int(part) for part in request.formation.split("-"))
+        forced_formation = (d, m, f)
+
     squad = optimize_squad(candidates, constraints)
-    xi = select_starting_xi(squad.players)
+    xi = select_starting_xi(squad.players, forced_formation)
     response = schemas.OptimizeResponse(
         total_cost=squad.total_cost,
         total_predicted_points=squad.total_predicted_points,

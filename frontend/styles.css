@@ -145,7 +145,7 @@ h3 { font-size: 0.95rem; color: var(--text-secondary); text-transform: uppercase
 
 label { font-size: 0.85rem; color: var(--text-secondary); }
 
-input[type="number"], input[type="search"], input[type="text"] {
+input[type="number"], input[type="search"], input[type="text"], select {
   font-family: var(--font);
   font-size: 0.95rem;
   padding: 8px 10px;
@@ -155,10 +155,20 @@ input[type="number"], input[type="search"], input[type="text"] {
   color: var(--text-primary);
 }
 
-.risk-params { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.risk-params { display: flex; flex-direction: column; gap: 12px; }
 .risk-params[hidden] { display: none; }
-.risk-params label { margin: 0; }
-.risk-params input { width: 90px; }
+
+.slider-field { display: flex; flex-direction: column; gap: 4px; }
+.slider-row { display: flex; align-items: center; gap: 10px; }
+.slider-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--series-blue);
+}
+.slider-row__end {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
 
 .btn {
   font-family: var(--font);

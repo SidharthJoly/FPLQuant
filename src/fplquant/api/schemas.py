@@ -1,4 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from fplquant.optimizer.starting_xi import VALID_FORMATIONS
+
+_VALID_FORMATION_STRINGS = {f"{d}-{m}-{f}" for d, m, f in VALID_FORMATIONS}
 
 
 class PlayerOut(BaseModel):
@@ -123,6 +127,20 @@ class OptimizeRequest(BaseModel):
     )
     risk_aversion: float = Field(default=1.0, ge=0, description="Only with risk_adjusted=true")
     injury_weight: float = Field(default=1.0, ge=0, description="Only with risk_adjusted=true")
+    formation: str | None = Field(
+        default=None,
+        description=(
+            "Force a specific starting XI formation, e.g. '3-4-3'. "
+            "Omit to auto-select the highest-scoring formation."
+        ),
+    )
+
+    @field_validator("formation")
+    @classmethod
+    def _validate_formation(cls, value: str | None) -> str | None:
+        if value is not None and value not in _VALID_FORMATION_STRINGS:
+            raise ValueError(f"formation must be one of {sorted(_VALID_FORMATION_STRINGS)}")
+        return value
 
 
 class StartingXIOut(BaseModel):

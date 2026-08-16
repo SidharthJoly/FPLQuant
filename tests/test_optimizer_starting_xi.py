@@ -185,6 +185,35 @@ def test_raises_when_no_formation_fits() -> None:
         select_starting_xi(squad)
 
 
+def test_forced_formation_overrides_the_best_scoring_one() -> None:
+    # Forwards dominate here, so the auto-selected formation would end in
+    # "-3" (see test_picks_highest_scoring_formation) — forcing 3-5-2 should
+    # override that and use only 2 forwards.
+    squad = _standard_squad(
+        gkp_points=[5, 3],
+        def_points=[4, 4, 4, 4, 4],
+        mid_points=[1, 1, 1, 1, 1],
+        fwd_points=[10, 10, 10],
+    )
+    xi = select_starting_xi(squad, forced_formation=(3, 5, 2))
+    assert xi.formation == "3-5-2"
+    fwd_starters = [p for p in xi.starters if p.element_type == FORWARD]
+    assert len(fwd_starters) == 2
+
+
+def test_forced_formation_raises_when_squad_cannot_fill_it() -> None:
+    # Only 3 forwards and no formation needs more than 3, but this squad has
+    # zero midfielders, so 4-5-1 (needs 5 MID) can't be filled.
+    squad = _standard_squad(
+        gkp_points=[5, 3],
+        def_points=[4, 3.5, 3, 2.5, 2],
+        mid_points=[],
+        fwd_points=[7, 6, 5],
+    )
+    with pytest.raises(InfeasibleSquadError):
+        select_starting_xi(squad, forced_formation=(4, 5, 1))
+
+
 def test_formation_string_format() -> None:
     squad = _standard_squad(
         gkp_points=[5, 3],

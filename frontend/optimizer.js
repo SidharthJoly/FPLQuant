@@ -27,6 +27,7 @@ form.addEventListener("submit", async (event) => {
   const payload = {
     budget: Number(form.budget.value),
     max_per_club: Number(form.max_per_club.value),
+    formation: form.formation.value === "auto" ? null : form.formation.value,
     risk_adjusted: riskCheckbox.checked,
     risk_aversion: Number(form.risk_aversion.value),
     injury_weight: Number(form.injury_weight.value),

@@ -22,7 +22,9 @@ VALID_FORMATIONS: list[tuple[int, int, int]] = [
 ]
 
 
-def select_starting_xi(squad: list[PlayerCandidate]) -> StartingXI:
+def select_starting_xi(
+    squad: list[PlayerCandidate], forced_formation: tuple[int, int, int] | None = None
+) -> StartingXI:
     """Pick the best valid starting XI from a 15-man squad.
 
     For each of FPL's 8 legal formations, the best XI is just the top N
@@ -31,6 +33,9 @@ def select_starting_xi(squad: list[PlayerCandidate]) -> StartingXI:
     picking greedily per position and comparing the (small, fixed) set of
     formation totals is provably optimal, no ILP needed. Captain and
     vice-captain are the top two starters by predicted_points.
+
+    If `forced_formation` is given, only that formation is considered
+    (instead of searching for the highest-scoring one).
     """
     by_position: dict[int, list[PlayerCandidate]] = {
         GOALKEEPER: [],
@@ -46,11 +51,13 @@ def select_starting_xi(squad: list[PlayerCandidate]) -> StartingXI:
     if not by_position[GOALKEEPER]:
         raise InfeasibleSquadError("Squad has no goalkeeper, can't pick a starting XI")
 
+    formations_to_try = [forced_formation] if forced_formation is not None else VALID_FORMATIONS
+
     best_formation: tuple[int, int, int] | None = None
     best_starters: list[PlayerCandidate] = []
     best_total = float("-inf")
 
-    for def_count, mid_count, fwd_count in VALID_FORMATIONS:
+    for def_count, mid_count, fwd_count in formations_to_try:
         if (
             len(by_position[DEFENDER]) < def_count
             or len(by_position[MIDFIELDER]) < mid_count
@@ -70,6 +77,9 @@ def select_starting_xi(squad: list[PlayerCandidate]) -> StartingXI:
             best_starters = starters
 
     if best_formation is None:
+        if forced_formation is not None:
+            d, m, f = forced_formation
+            raise InfeasibleSquadError(f"Squad can't fill the {d}-{m}-{f} formation")
         raise InfeasibleSquadError("No valid formation fits this squad")
 
     starter_ids = {p.player_id for p in best_starters}

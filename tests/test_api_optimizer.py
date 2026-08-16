@@ -63,6 +63,27 @@ def test_optimize_includes_starting_xi(db_session: Session, api_client: TestClie
     assert xi["triple_captain_value"] == xi["captain"]["predicted_points"]
 
 
+def test_optimize_accepts_a_forced_formation(db_session: Session, api_client: TestClient) -> None:
+    _seed_full_pool(db_session)
+
+    response = api_client.post(
+        "/optimize", json={"budget": 100.0, "max_per_club": 3, "formation": "4-4-2"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["starting_xi"]["formation"] == "4-4-2"
+
+
+def test_optimize_rejects_an_invalid_formation(db_session: Session, api_client: TestClient) -> None:
+    _seed_full_pool(db_session)
+
+    response = api_client.post(
+        "/optimize", json={"budget": 100.0, "max_per_club": 3, "formation": "9-9-9"}
+    )
+
+    assert response.status_code == 422
+
+
 def test_optimize_infeasible_returns_400(db_session: Session, api_client: TestClient) -> None:
     _seed_full_pool(db_session)
 

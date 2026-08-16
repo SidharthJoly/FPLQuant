@@ -128,3 +128,22 @@ export function emptyState(message) {
 export function clear(el) {
   el.replaceChildren();
 }
+
+/** Cost/points plus, when available, next opponent/venue/difficulty and
+ * playing-chance — the "will they have a good game against this opponent at
+ * this venue" context behind why a player was picked, benched, or offered
+ * as a transfer target. */
+export function playerMetaLine(player) {
+  let text = `£${(player.now_cost / 10).toFixed(1)}m · ${player.predicted_points.toFixed(2)} pts`;
+  if (player.next_opponent) {
+    const venue = player.next_opponent_is_home ? "H" : "A";
+    text += ` · vs ${player.next_opponent} (${venue})`;
+    if (player.fixture_difficulty) {
+      text += ` · FDR ${player.fixture_difficulty}`;
+    }
+  }
+  if (player.chance_of_playing < 1) {
+    text += ` · ${Math.round(player.chance_of_playing * 100)}% to play`;
+  }
+  return text;
+}

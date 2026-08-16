@@ -15,6 +15,7 @@
       <button class="tab active" data-tab="optimizer" role="tab" aria-selected="true">Optimizer</button>
       <button class="tab" data-tab="explorer" role="tab" aria-selected="false">Player Explorer</button>
       <button class="tab" data-tab="ticker" role="tab" aria-selected="false">Market Ticker</button>
+      <button class="tab" data-tab="transfers" role="tab" aria-selected="false">Transfers</button>
     </nav>
     <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">◐</button>
   </header>
@@ -138,11 +139,92 @@
       </div>
       <div class="ticker-strip" id="ticker-strip"></div>
     </section>
+
+    <!-- ===================== TRANSFERS ===================== -->
+    <section class="panel" id="panel-transfers" role="tabpanel">
+      <form class="card optimizer-form" id="transfers-form">
+        <div class="field">
+          <label for="fpl-team-id">Your FPL team ID</label>
+          <input type="number" id="fpl-team-id" name="fpl_team_id" min="1" step="1" placeholder="e.g. 1234567" required />
+        </div>
+        <div class="field">
+          <label for="free-transfers">Free transfers</label>
+          <select id="free-transfers" name="free_transfers">
+            <option value="0">0</option>
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="transfer-chip">Chip this week</label>
+          <select id="transfer-chip" name="chip">
+            <option value="none" selected>None</option>
+            <option value="wildcard">Wildcard</option>
+            <option value="free_hit">Free Hit</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="transfer-max-per-club">Max per club</label>
+          <select id="transfer-max-per-club" name="max_per_club">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+          </select>
+        </div>
+        <div class="field field--checkbox">
+          <label for="transfer-risk-adjusted">
+            <input type="checkbox" id="transfer-risk-adjusted" name="risk_adjusted" />
+            Risk-adjusted
+          </label>
+        </div>
+        <div class="field risk-params" id="transfer-risk-params" hidden>
+          <div class="slider-field">
+            <label for="transfer-risk-aversion">How risky should your picks be?</label>
+            <div class="slider-row">
+              <span class="slider-row__end">Very risky</span>
+              <input type="range" id="transfer-risk-aversion" name="risk_aversion" value="1.0" min="0" max="5" step="0.25" />
+              <span class="slider-row__end">Play it safe</span>
+            </div>
+          </div>
+          <div class="slider-field">
+            <label for="transfer-injury-weight">How worried about injuries?</label>
+            <div class="slider-row">
+              <span class="slider-row__end">Not worried</span>
+              <input type="range" id="transfer-injury-weight" name="injury_weight" value="1.0" min="0" max="2" step="0.1" />
+              <span class="slider-row__end">Very worried</span>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn--primary">Plan transfers</button>
+      </form>
+
+      <div id="transfers-status" class="status" aria-live="polite"></div>
+
+      <div id="transfers-results" class="optimizer-results" hidden>
+        <div class="kpi-row" id="transfers-kpis"></div>
+        <div id="transfers-verdict" class="transfer-verdict"></div>
+
+        <h3>Recommended transfers</h3>
+        <div id="transfers-pairs" class="transfer-pairs"></div>
+
+        <h3>Current squad</h3>
+        <div id="transfers-current-squad" class="squad-grid"></div>
+
+        <h3>Resulting starting XI</h3>
+        <div id="transfers-squad" class="squad-grid"></div>
+        <h3>Bench</h3>
+        <div id="transfers-bench" class="squad-grid"></div>
+      </div>
+    </section>
   </main>
 
   <script type="module" src="api.js"></script>
   <script type="module" src="components.js"></script>
   <script type="module" src="optimizer.js"></script>
+  <script type="module" src="transfers.js"></script>
   <script type="module" src="explorer.js"></script>
   <script type="module" src="ticker.js"></script>
   <script type="module" src="main.js"></script>

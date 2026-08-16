@@ -41,6 +41,20 @@ class FPLClient:
     def get_element_summary(self, player_fpl_id: int) -> dict[str, Any]:
         return self._get(f"/element-summary/{player_fpl_id}/")  # type: ignore[no-any-return]
 
+    def get_entry(self, team_id: int) -> dict[str, Any]:
+        """Public profile for one manager's team (name, overall rank, etc)."""
+        return self._get(f"/entry/{team_id}/")  # type: ignore[no-any-return]
+
+    def get_entry_picks(self, team_id: int, event_id: int) -> dict[str, Any]:
+        """A manager's squad as it stood for gameweek `event_id`.
+
+        Only available once that gameweek's deadline has passed — FPL
+        doesn't expose picks for a gameweek still open for transfers, even
+        for the team's own public entry. Raises `requests.HTTPError` (404)
+        if not yet available.
+        """
+        return self._get(f"/entry/{team_id}/event/{event_id}/picks/")  # type: ignore[no-any-return]
+
     def close(self) -> None:
         self.session.close()
 

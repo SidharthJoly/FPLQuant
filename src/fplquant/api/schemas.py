@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from fplquant.optimizer.starting_xi import VALID_FORMATIONS
@@ -120,6 +122,10 @@ class SquadPlayerOut(BaseModel):
     element_type: int
     now_cost: int
     predicted_points: float
+    next_opponent: str | None = None
+    next_opponent_is_home: bool | None = None
+    fixture_difficulty: int | None = None
+    chance_of_playing: float = 1.0
 
 
 class OptimizeRequest(BaseModel):
@@ -161,4 +167,43 @@ class OptimizeResponse(BaseModel):
     total_cost: int
     total_predicted_points: float
     squad: list[SquadPlayerOut]
+    starting_xi: StartingXIOut
+
+
+class TransferPlanRequest(BaseModel):
+    fpl_team_id: int = Field(
+        ..., gt=0, description="Your public FPL team ID (from your team's URL)"
+    )
+    free_transfers: int = Field(default=1, ge=0, le=5)
+    chip: Literal["none", "wildcard", "free_hit"] = Field(
+        default="none",
+        description="Playing wildcard or free hit removes the transfer limit and the point hit",
+    )
+    max_per_club: int = Field(default=3, ge=1)
+    risk_adjusted: bool = Field(
+        default=False, description="Maximize risk-adjusted points instead of raw points"
+    )
+    risk_aversion: float = Field(default=1.0, ge=0, description="Only with risk_adjusted=true")
+    injury_weight: float = Field(default=1.0, ge=0, description="Only with risk_adjusted=true")
+
+
+class TransferPairOut(BaseModel):
+    out: SquadPlayerOut
+    player_in: SquadPlayerOut
+
+
+class TransferPlanResponse(BaseModel):
+    team_name: str
+    event_id: int  # the gameweek the current squad snapshot was taken from
+    bank: int  # tenths of a million, e.g. 5 = £0.5m
+    chip: Literal["none", "wildcard", "free_hit"]
+    current_squad: list[SquadPlayerOut]
+    transfers: list[TransferPairOut]
+    transfers_made: int
+    free_transfers: int
+    hit_cost: int
+    points_gain_before_hit: float
+    points_gain_after_hit: float
+    worth_it: bool
+    resulting_squad: list[SquadPlayerOut]
     starting_xi: StartingXIOut

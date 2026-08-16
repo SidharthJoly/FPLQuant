@@ -24,7 +24,11 @@ class PlayerCandidate:
     team_short_name: str
     element_type: int
     now_cost: int  # tenths of a million
-    predicted_points: float
+    predicted_points: float  # fixture-adjusted expected points for the next match
+    next_opponent: str | None = None
+    next_opponent_is_home: bool | None = None
+    fixture_difficulty: int | None = None  # FPL's own 1 (easiest) - 5 (hardest) rating
+    chance_of_playing: float = 1.0  # 0.0-1.0
 
 
 @dataclass(frozen=True)

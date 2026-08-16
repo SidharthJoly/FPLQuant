@@ -69,7 +69,8 @@ FastAPI app (src/fplquant/api/main.py)
         ├── /players, /players/{id}, /players/{id}/similar
         ├── /form, /risk
         ├── /market/momentum, /market/volatility, /market/correlation
-        └── /optimize  ── cached in Redis (api/cache.py), keyed on request params
+        ├── /optimize  ── cached in Redis (api/cache.py), keyed on request params
+        └── /transfers/plan  ── see "Fixture-adjusted predictions & transfer planner" below
 ```
 
 All read endpoints query the same SQLite database and reuse the exact same
@@ -82,12 +83,49 @@ logging a warning) if Redis is unreachable rather than ever failing a request.
 
 ```
 frontend/ (static, no build step — no Node/npm involved)
-  index.html   ── 3 tabs: Optimizer, Player Explorer, Market Ticker
+  index.html   ── 4 tabs: Optimizer, Player Explorer, Market Ticker, Transfers
   config.js    ── API_BASE: same-origin locally, the backend's URL once deployed
   api.js       ── fetch wrapper over the endpoints above
-  components.js ── stat tile, sparkline (SVG), risk badge, data table
-  optimizer.js / explorer.js / ticker.js / main.js
+  components.js ── stat tile, sparkline (SVG), risk badge, data table, fixture-context meta line
+  optimizer.js / explorer.js / ticker.js / transfers.js / main.js
 ```
+
+### Fixture-adjusted predictions & transfer planner
+
+Every predicted-points number in the app — the optimizer, the starting XI's
+bench/start and captain choices, and the transfer planner — is fixture-adjusted
+for each player's *next match specifically* (`src/fplquant/form/fixtures.py`),
+not just a season-long average:
+
+- **Opponent strength**: a continuous multiplier (clamped 0.7–1.3) built from
+  each team's own attack/defence ratings, position-aware — GKP/DEF care about
+  the opponent's attacking strength (clean sheet odds), MID/FWD care about the
+  opponent's defensive strength — plus FPL's own 1–5 fixture difficulty rating
+  surfaced alongside it for display.
+- **Venue**: home/away, since those ratings differ by venue.
+- **Chance of playing**: FPL's own `chance_of_playing_next_round` when set
+  (press-conference news), else inferred from `status`.
+
+This feeds the risk-adjusted scorer too (`src/fplquant/risk/adjusted.py`), so
+"risk-adjusted" and "fixture-adjusted" compose rather than compete.
+
+The **transfer planner** (`src/fplquant/transfers/`) pulls a manager's current
+squad from their public FPL team ID — no login needed, the same data FPL's own
+site shows on a manager's profile — and solves an ILP (`propose_transfers`,
+extending the same PuLP formulation as the squad optimizer) for the transfers
+that maximize next-match expected points *net of the real -4-per-transfer hit*
+beyond the manager's free transfers. Because making no transfers is always a
+free, feasible option, a transfer is only ever recommended when its expected
+gain outweighs its cost — "is this transfer worth the hit" is answered by the
+optimization itself, not a separate heuristic. Wildcard/Free Hit chips are
+supported (they lift the transfer limit and the hit entirely for that
+gameweek). Sell price is approximated as current market value, since FPL's
+sell-on-fee data isn't available without authenticating as the manager.
+
+Note: FPL only exposes a manager's picks once their first gameweek deadline
+has passed, so the transfer planner has nothing to plan from until then — it
+returns a clear "season hasn't started yet" message rather than an error in
+that case.
 
 Two ways to serve it, both supported:
 - **Local / same-origin:** FastAPI mounts `frontend/` itself (`StaticFiles` at
@@ -266,6 +304,9 @@ uv run alembic upgrade head
 7. ✅ Player similarity finder (cosine similarity / k-NN, PCA/t-SNE viz)
 8. ✅ FastAPI backend with Redis caching
 9. ✅ Frontend dashboard (squad optimizer, player explorer, market ticker)
+10. ✅ Fixture-adjusted predictions (opponent strength, venue, playing chance)
+    and a transfer planner (FPL team ID pull, -4-hit-aware ILP recommendations,
+    wildcard/free hit support)
 
 ## Deployment
 

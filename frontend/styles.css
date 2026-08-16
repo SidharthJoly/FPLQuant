@@ -237,6 +237,49 @@ input[type="number"], input[type="search"], input[type="text"], select {
   margin-bottom: 16px;
 }
 
+/* ============ Transfer planner ============ */
+.transfer-verdict {
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.transfer-verdict--positive {
+  background: color-mix(in srgb, var(--delta-good) 10%, transparent);
+  color: var(--delta-good);
+  border-color: color-mix(in srgb, var(--delta-good) 30%, transparent);
+}
+.transfer-verdict--neutral {
+  background: var(--surface-2);
+  color: var(--text-secondary);
+}
+
+.transfer-pairs { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.transfer-pair {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 0.9rem;
+}
+.transfer-pair__side { flex: 1; }
+.transfer-pair__label {
+  display: inline-block;
+  min-width: 32px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+.transfer-pair__out .transfer-pair__label { background: color-mix(in srgb, var(--delta-bad) 15%, transparent); color: var(--delta-bad); }
+.transfer-pair__in .transfer-pair__label { background: color-mix(in srgb, var(--delta-good) 15%, transparent); color: var(--delta-good); }
+.transfer-pair__arrow { color: var(--text-muted); }
+
 .optimizer-results h3 {
   margin: 20px 0 10px;
   font-size: 0.8rem;

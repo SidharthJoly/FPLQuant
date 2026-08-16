@@ -1,5 +1,5 @@
 import { api } from "./api.js";
-import { statTile, clear } from "./components.js";
+import { statTile, clear, playerMetaLine } from "./components.js";
 
 const POSITION_NAMES = { 1: "GKP", 2: "DEF", 3: "MID", 4: "FWD" };
 const POSITION_ORDER = [1, 2, 3, 4];
@@ -107,7 +107,7 @@ function renderPlayerGroup(container, players, xi) {
 
       const meta = document.createElement("span");
       meta.className = "squad-player__meta";
-      meta.textContent = `£${(player.now_cost / 10).toFixed(1)}m · ${player.predicted_points.toFixed(2)} pts`;
+      meta.textContent = playerMetaLine(player);
 
       row.appendChild(name);
       row.appendChild(meta);

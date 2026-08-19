@@ -10,10 +10,11 @@ risk-adjusted squad.
 
 ## Status
 
-✅ All 9 planned milestones are in place, and it's live:
-**[sidharthjoly.github.io/FPLQuant](https://sidharthjoly.github.io/FPLQuant/)**
-(frontend, GitHub Pages) talking to a real backend on an Oracle Cloud Always
-Free VM at `https://fplquant.duckdns.org` (see [`DEPLOYMENT.md`](DEPLOYMENT.md)).
+✅ All 10 planned milestones are in place, and it's live:
+**[fplquant.sidharthjoly.com](https://fplquant.sidharthjoly.com/)**
+(frontend, GitHub Pages behind a custom subdomain) talking to a real backend
+on an Oracle Cloud Always Free VM at `https://fplquant.duckdns.org` (see
+[`DEPLOYMENT.md`](DEPLOYMENT.md)).
 
 ## Screenshots
 
@@ -149,9 +150,10 @@ Two ways to serve it, both supported:
   while the backend runs separately on the droplet — genuine cross-origin
   traffic. `config.js`'s `API_BASE` needs to point at the droplet's URL, and
   `Settings.cors_allowed_origins` (`src/fplquant/config.py`) needs the Pages
-  origin allowed — it already defaults to
-  `https://sidharthjoly.github.io` plus localhost, override via
-  `FPLQUANT_CORS_ALLOWED_ORIGINS` once a custom domain exists.
+  origin allowed — it already defaults to `https://fplquant.sidharthjoly.com`
+  (the custom subdomain the site runs on) plus `https://sidharthjoly.github.io`
+  and localhost, override via `FPLQUANT_CORS_ALLOWED_ORIGINS` if that ever
+  changes.
 
 Vanilla HTML/CSS/JS by design: no bundler, no framework, no `npm install`.
 
@@ -325,8 +327,10 @@ uv run alembic upgrade head
 
 Split across two hosts, both live:
 
-- **Frontend** — [GitHub Pages](https://sidharthjoly.github.io/FPLQuant/),
-  deploys via `.github/workflows/pages.yml` on every push touching `frontend/`.
+- **Frontend** — [GitHub Pages](https://fplquant.sidharthjoly.com/), served
+  behind a custom subdomain (`fplquant.sidharthjoly.com`, CNAMEd to
+  `sidharthjoly.github.io`), deploys via `.github/workflows/pages.yml` on
+  every push touching `frontend/`.
 - **Backend** (FastAPI + Redis) — an Oracle Cloud "Always Free" VM
   (DigitalOcean's GitHub Student Pack offer expired before it got redeemed,
   so the plan moved here instead), fronted by Caddy at

@@ -1,7 +1,9 @@
 # Deploying the backend (Oracle Cloud "Always Free")
 
 The frontend deploys itself (GitHub Pages, see `.github/workflows/pages.yml`),
-live at https://sidharthjoly.github.io/FPLQuant/.
+live at https://fplquant.sidharthjoly.com/ (a custom subdomain CNAMEd to
+`sidharthjoly.github.io`; the plain `sidharthjoly.github.io/FPLQuant/` URL
+redirects there).
 
 The backend (FastAPI + Redis, via `docker-compose.yml`) is **live** on an
 Oracle Cloud "Always Free" VM, fronted by Caddy for HTTPS:

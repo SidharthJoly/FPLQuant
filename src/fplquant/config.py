@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     # needs the Pages origin explicitly — same-origin local dev doesn't hit
     # CORS at all. Add a custom domain here (comma-separated) once it exists.
     cors_allowed_origins: str = (
+        "https://fplquant.sidharthjoly.com,http://fplquant.sidharthjoly.com,"
         "https://sidharthjoly.github.io,http://localhost:8000,http://127.0.0.1:8000"
     )
 

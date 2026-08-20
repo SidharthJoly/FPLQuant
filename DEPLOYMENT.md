@@ -150,18 +150,40 @@ export const API_BASE = "https://fplquant.duckdns.org";
 Commit and push — `.github/workflows/pages.yml` redeploys the Pages site
 automatically on any push touching `frontend/`.
 
-## 5. Redeploying after changes (CD)
+## 5. Docker image (GitHub Container Registry)
 
-`.github/workflows/deploy.yml` SSHes into the VM and re-pulls/rebuilds —
-manually triggered (`workflow_dispatch`), not on every push, so a deploy is
-always a deliberate action. Needs these repo secrets set first
-(Settings → Secrets and variables → Actions):
+`.github/workflows/docker-publish.yml` builds the image from the `Dockerfile`
+and pushes it to `ghcr.io/sidharthjoly/fplquant` (tags: `latest` and the
+short commit SHA) automatically on every push to `main` that touches the
+Dockerfile, `src/`, or dependency lockfiles — this runs on GitHub's own CI
+runners, not the low-spec VM. It shows up under the repo's "Packages"
+sidebar and the GitHub profile's Packages tab.
+
+The package is created **private** by default on its first push. To make it
+visible on the profile and pullable without auth from the VM, one manual
+step is needed once: package page → Package settings → Change visibility →
+Public.
+
+## 6. Redeploying after changes (CD)
+
+`.github/workflows/deploy.yml` SSHes into the VM, pulls the latest git
+source (for anything not baked into the image, e.g. `docker-compose.yml`
+itself) and the latest published `ghcr.io/sidharthjoly/fplquant:latest`
+image, then restarts the stack — manually triggered (`workflow_dispatch`),
+not on every push, so a deploy is always a deliberate action. Needs these
+repo secrets set first (Settings → Secrets and variables → Actions):
 
 | Secret | Value |
 |---|---|
 | `DEPLOY_HOST` | `fplquant.duckdns.org` (or the VM's IP) |
 | `DEPLOY_USER` | `ubuntu` |
 | `DEPLOY_SSH_KEY` | the private key matching the public key added to the instance |
+
+Since the image is built by GitHub's CI runners rather than rebuilt on the
+VM's 1/8-OCPU instance, deploys are faster and don't spike CPU during the
+container rebuild. Trigger order matters: push to `main` (which publishes
+the image) before running "Deploy backend", or the deploy will just re-pull
+whatever was last published.
 
 Then: Actions tab → "Deploy backend" → Run workflow.
 

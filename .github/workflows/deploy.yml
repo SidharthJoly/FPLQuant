@@ -17,7 +17,8 @@ jobs:
             set -e
             cd FPLQuant
             git pull origin main
-            docker compose up -d --build
+            docker compose pull api
+            docker compose up -d
             for i in $(seq 1 30); do
               if curl -sf http://localhost:8000/health > /dev/null; then
                 echo "API is healthy"

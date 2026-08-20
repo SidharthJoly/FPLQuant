@@ -254,7 +254,12 @@ docker compose exec api uv run fplquant-ingest   # populate data inside the cont
 
 The Docker setup (`Dockerfile`, `docker-compose.yml`) is running in
 production on the deployed backend (see Deployment below) — built and
-verified for real on the actual VM, not just locally.
+verified for real on the actual VM, not just locally. The image itself is
+built by CI and published to
+[GitHub Container Registry](https://github.com/sidharthjoly?tab=packages)
+(`ghcr.io/sidharthjoly/fplquant`) on every push to `main` via
+`.github/workflows/docker-publish.yml`; the VM pulls the prebuilt image on
+deploy rather than rebuilding from source on its own limited CPU.
 
 The frontend itself *was* visually verified — headless Chromium against a
 locally-seeded database (real FPL bootstrap data plus synthetic gameweek

@@ -34,6 +34,7 @@
 body {
   margin: 0; background: var(--fq-bg); color: var(--fq-text); font-family: var(--font);
   font-size: 15px; line-height: 1.55; overflow-x: hidden;
+  min-height: 100vh; display: flex; flex-direction: column;
 }
 a { color: var(--fq-accent-hi); text-decoration: none; }
 a:hover { color: var(--fq-accent); }
@@ -116,7 +117,7 @@ h1, h2, h3, h4 { font-weight: 500; margin: 0; }
 .fq-hero__stat-value--accent { color: var(--fq-accent-hi); }
 
 /* ============ Layout ============ */
-.fq-main { max-width: 1180px; margin: 0 auto; padding: 10px 28px 90px; }
+.fq-main { max-width: 1180px; margin: 0 auto; padding: 10px 28px 90px; width: 100%; flex: 1; }
 .panel { display: none; }
 .panel.active { display: block; }
 
@@ -419,7 +420,7 @@ h1, h2, h3, h4 { font-weight: 500; margin: 0; }
 .status.error { color: var(--fq-down); }
 
 /* ============ Footer ============ */
-.fq-footer { border-top: 1px solid var(--fq-line); background: var(--fq-bg-2); }
+.fq-footer { border-top: 1px solid var(--fq-line); background: var(--fq-bg-2); flex-shrink: 0; }
 .fq-footer__bar {
   max-width: 1180px; margin: 0 auto; padding: 22px 28px; display: flex; justify-content: space-between;
   align-items: center; font-size: 12px; color: var(--fq-faint); flex-wrap: wrap; gap: 6px;

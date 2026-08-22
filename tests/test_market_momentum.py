@@ -1,7 +1,11 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from fplquant.market.momentum import compute_price_momentum, compute_price_momentum_scores
+from fplquant.market.momentum import (
+    compute_live_market_movers,
+    compute_price_momentum,
+    compute_price_momentum_scores,
+)
 from fplquant.models.orm import Player, PlayerGameweekStat, Team
 
 
@@ -108,3 +112,65 @@ def test_compute_price_momentum_scores_sorted_descending(db_session: Session) ->
     scores = compute_price_momentum_scores(db_session)
 
     assert [s.web_name for s in scores] == ["Rising", "Falling"]
+
+
+def test_live_market_movers_uses_bootstrap_fields_without_gameweek_history() -> None:
+    riser = Player(
+        id=1,
+        fpl_id=101,
+        team_id=1,
+        first_name="R",
+        second_name="R",
+        web_name="Riser",
+        element_type=3,
+        now_cost=100,
+        status="a",
+    )
+    faller = Player(
+        id=2,
+        fpl_id=102,
+        team_id=1,
+        first_name="F",
+        second_name="F",
+        web_name="Faller",
+        element_type=3,
+        now_cost=100,
+        status="a",
+    )
+    quiet = Player(
+        id=3,
+        fpl_id=103,
+        team_id=1,
+        first_name="Q",
+        second_name="Q",
+        web_name="Quiet",
+        element_type=3,
+        now_cost=100,
+        status="a",
+    )
+    players_by_fpl_id = {101: riser, 102: faller, 103: quiet}
+
+    elements = [
+        {
+            "id": 101,
+            "cost_change_event": 1,
+            "transfers_in_event": 50000,
+            "transfers_out_event": 1000,
+        },
+        {
+            "id": 102,
+            "cost_change_event": -1,
+            "transfers_in_event": 1000,
+            "transfers_out_event": 40000,
+        },
+        {"id": 103, "cost_change_event": 0, "transfers_in_event": 0, "transfers_out_event": 0},
+        {"id": 999, "cost_change_event": 2, "transfers_in_event": 10000, "transfers_out_event": 0},
+    ]
+
+    scores = compute_live_market_movers(elements, players_by_fpl_id, total_players=1_000_000)
+
+    # Quiet (no movement) and the unknown fpl_id (999, not in our DB) are dropped.
+    assert [s.web_name for s in scores] == ["Riser", "Faller"]
+    assert scores[0].price_change == 1
+    assert scores[0].net_transfers == 49000
+    assert scores[1].price_change == -1
